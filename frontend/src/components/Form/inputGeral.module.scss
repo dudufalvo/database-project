@@ -1,0 +1,47 @@
+@import '../../styles/mixins.scss';
+
+.inputForm {
+	@include size(100%, 100%);
+	@include flex($direction: column, $align: flex-start, $gap: 0);
+	position: relative;
+
+	textarea, input {
+		@include size(100%, 100%);
+		@include text($montserrat, 1rem, 1.25rem, 300, $black);
+		@include container($white, $simpleBorder, $smallRadius, $lightGray, $inputPadding);
+		resize: none;
+		display: block;
+
+		&::placeholder { color:$darkGray; }
+
+		&:focus {
+			border-color: $greenTwo;
+			outline: none;
+		}
+	}
+
+	.disabledInput {
+		background-color: $disabled;
+		color: $txtDisabled;
+		pointer-events: none;
+	}
+
+	.errorInput {
+		border-color: $red;
+		color: $red;
+
+		&::placeholder { color: $red; }
+	}
+
+	.errorIcon, .passwordIcon {
+		position: absolute;
+		right: 1rem;
+		top: 35%;
+		height: 1.05rem;
+		width: auto;
+		color: $red;
+}
+
+	.passwordIcon { color: $darkGray; }
+	.passwordIconError, .errorIcon { color: $red; }
+}

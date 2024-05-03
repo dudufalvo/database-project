@@ -1,0 +1,129 @@
+@import '../../../styles/mixins.scss';
+
+.date-time-picker-container {
+  @include size(100%, auto);
+  @include flex($direction: column, $justify: flex-start, $align: center, $gap: 0.5rem);
+}
+
+.date-time-picker-change-top,
+.isInlinePicker,
+.isNotInlinePicker,
+.readOnlyDatePickerContainer {
+  @include size(100%, auto);
+  @include flex($justify: flex-start, $align: center, $gap: 0.5rem);
+}
+
+.isNotInlinePicker {
+  align-items: flex-start;
+  flex-direction: column;
+}
+
+.date-time-picker-container button {
+  height: 100%;
+}
+
+.datePickerMain,
+.timePickerMain,
+.errorHelperPicker,
+.readOnlyDateTime {
+  @include text($montserrat, 1rem, 1rem, 300, $darkGray);
+  border: 1px solid $lightGray;
+  border-radius: $smallRadius;
+  padding: $inputPadding;
+  width: 100%;
+}
+
+.readOnlyDateTime span {
+  margin-right: 1rem;
+}
+
+.errorInputPicker {
+  color: $red;
+  border: 1px solid $red;
+}
+
+.react-date-picker__wrapper,
+.react-time-picker__wrapper {
+  border: none;
+}
+
+.react-date-picker__button svg,
+.react-time-picker__clock-button.react-time-picker__button svg {
+  color: $darkGray;
+  @include size(auto, 1.05rem);
+}
+
+
+.errorInputPicker svg,
+.errorInputPicker .react-time-picker__wrapper button svg {
+  color: $red;
+}
+
+.datePickerMain:hover,
+.timePickerMain:hover {
+  border: 1px solid $greenTwo;
+}
+
+.datePickerMain:hover,
+.datePickerMain:hover svg,
+.timePickerMain:hover,
+.timePickerMain:hover svg {
+  color: $black;
+}
+
+.react-date-picker__calendar,
+.react-time-picker__clock {
+  inset: 120% auto auto 0 !important;
+}
+
+.calendarPickerMain,
+.react-time-picker__clock.react-time-picker__clock--open {
+  @include text($montserrat, 1rem, 1rem, 300, $black);
+  border: 1px solid $greenTwo;
+  border-radius: $smallRadius;
+}
+
+.react-calendar__tile--now {
+  background: $lightGray;
+  border-radius: $smallRadius;
+  color: $black;
+}
+
+.react-calendar__month-view__days__day.calendarDatePicker:hover,
+.react-calendar__navigation__label:hover,
+.react-calendar__navigation__arrow.react-calendar__navigation__next-button:hover,
+.react-calendar__navigation__arrow.react-calendar__navigation__next2-button:hover,
+.react-calendar__navigation__arrow.react-calendar__navigation__prev-button:hover,
+.react-calendar__navigation__arrow.react-calendar__navigation__prev2-button:hover {
+  background-color: $hoverGreen !important;
+  border-radius: $smallRadius;
+}
+
+.react-calendar__month-view__days__day--weekend {
+  color: $black;
+}
+
+.react-calendar__tile--active {
+  background: $greenTwo;
+  border-radius: $smallRadius;
+  color: $white;
+}
+
+.react-calendar__month-view__days__day--neighboringMonth {
+  color: $darkGray;
+}
+
+.react-date-picker--disabled,
+.react-date-picker--disabled svg,
+.react-time-picker--disabled,
+.react-time-picker--disabled .react-time-picker__clock-button svg {
+  color: $txtDisabled;
+  background-color: $disabled;
+  pointer-events: none;
+}
+
+@media (max-width: 760px) {
+  .isInlinePicker {
+    flex-direction: column;
+  }
+}

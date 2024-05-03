@@ -1,0 +1,177 @@
+@import '../../styles/mixins.scss';
+
+.name {
+  @include text();
+  @include flex($justify: center, $align: center);
+  height: 100%;
+}
+
+.profilePicture {
+  @include size(2rem, 2rem);
+  border-radius: 50%;
+}
+
+.navbar,
+.navbarMobile {
+  position: sticky;
+  z-index: 3;
+  top: 0;
+}
+
+.navbarMobile {
+  display: none;
+}
+
+.activeLink {
+  font-weight: 600;
+}
+
+.navbar {
+  @include flex($justify: space-between, $align: center, $gap: 0);
+  @include container($backgroundColor: $mainWhite, $border: none, $padding: 1.5rem 3rem);
+  backdrop-filter: blur(9px);
+  height: 5rem;
+
+  .logo {
+    @include flex($justify: center, $align: center, $gap: 0.5rem);
+
+    img {
+      height: 2rem;
+    }
+  }
+
+  .links {
+    @include flex($justify: center, $align: center, $gap: 2rem);
+    @include text($size: 1rem);
+
+    .dropdown {
+      position: relative;
+
+      .dropdownText {
+        @include flex($justify: center, $align: center, $gap: 0.5rem);
+        user-select: none;
+        padding: 0.25rem 0;
+        cursor: pointer;
+
+        .arrow {
+          width: 0.5rem;
+          object-fit: contain;
+        }
+      }
+
+      .dropdownContent {
+        @include container($backgroundColor: $white, $border: $simpleBorder, $borderRadius: $smallRadius, $borderColor: $greenTwo, $padding: 0);
+        display: none;
+        position: absolute;
+        width: 100%;
+        min-width: fit-content;
+        z-index: 1;
+
+        button {
+          @include flex($justify: flex-start, $align: center, $gap: 0.5rem);
+          @include text();
+          padding: 0.75rem 0.5rem;
+          align-self: stretch;
+          border: none;
+          background: none;
+          cursor: pointer;
+
+          &:hover {
+            background: $hoverGreen;
+          }
+
+          &:nth-child(1) {
+            border-radius: 0.5rem 0.5rem 0 0;
+          }
+
+          &:nth-last-child(1) {
+            border-radius: 0 0 0.5rem 0.5rem;
+          }
+        }
+
+        hr {
+          width: 100%;
+          margin: 0;
+          border: none;
+          border-bottom: 1px solid $lightGray;
+        }
+      }
+
+      &:hover {
+        .name {
+          text-decoration: underline;
+        }
+
+        .dropdownContent {
+          @include flex($direction: column, $justify: center, $align: flex-start, $gap: 0);
+        }
+      }
+    }
+  }
+}
+
+@media (max-width: 900px) {
+  .navbar {
+    display: none;
+  }
+
+  .navbarMobile {
+    @include container($backgroundColor: $mainWhite, $border: none, $padding: 0);
+    @include flex($direction: column, $gap: 0);
+
+    .navbarTop {
+      @include flex($justify: space-between, $align: center);
+      width: 100%;
+      padding: 1.5rem;
+
+      .logo {
+        @include flex($justify: center, $align: center);
+
+        img {
+          height: 1.75rem;
+        }
+      }
+
+      .burger {
+        height: 1.75rem;
+        cursor: pointer;
+      }
+    }
+
+    .burgerMenu {
+      @include flex($direction: column, $align: center, $gap: 4rem);
+      @include size(100%, 100%);
+      padding: 3rem;
+
+      .profile {
+        @include flex($justify: center, $align: center, $gap: 0.5rem);
+      }
+    }
+  }
+
+  .navbarMobileActive {
+    height: 100vh;
+
+    .profilePicture {
+      @include size(2.5rem, 2.5rem);
+      color: white;
+    }
+
+    button,
+    .name {
+      @include text($color: $white, $size: 1.5rem);
+      border: none;
+      background: none;
+      cursor: pointer;
+    }
+
+    .navbarTop,
+    .burgerMenu {
+      background: $black;
+    }
+
+    .activeLink {
+      font-weight: 700;
+    }
+  }
+}

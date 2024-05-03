@@ -1,0 +1,102 @@
+@import '../../styles/mixins.scss';
+
+.auth {
+  @include size($fullWidth, $fullHeight);
+  @include flex(column, center, center, 0);
+  @include container($mainWhite);
+
+  .authLeft {
+    @include size(100%, 100%);
+    @include flex(column, center, center, 0);
+
+    .authContent {
+      @include size(87.5%, 90%);
+      @include flex(column, space-between, center, 3.25rem);
+
+      .authContentContainer {
+        @include size(100%, auto);
+        @include flex($direction: column, $justify: center, $gap: 3.25rem);
+
+        .authContentTop {
+          @include size(75%, auto);
+          @include flex(column, center, center, 0.5rem);
+          text-align: center;
+
+          h1 { @include text($raleway, 2rem, 3rem, 700, $black); }
+          h3 { @include text($raleway, 1.25rem, 1.313rem, 500, $black); }
+        }
+
+        .authContentMiddle {
+          @include size(100%, auto);
+          @include flex(column, center, center, 1.5rem);
+        }
+      }
+
+      .authContentBottom {
+        @include size(100%, auto);
+        @include flex(column, center, center, 1rem);
+
+        .authButton {
+          @include size(100%, auto);
+          @include flex(column, center, center, 0.5rem);
+          @include text($montserrat, 0.75rem, 1rem, 400, $black);
+
+          a {
+            @include text($size: 0.75rem, $height: 1rem, $weight: 600, $color: $greenTwo);
+            text-decoration: none;
+          }
+        }
+      }
+    }
+  }
+
+  .authRight {
+    display: none;
+  }
+}
+
+@media (min-width: 900px) {
+  .auth {
+    @include flex($direction: row);
+
+    .authLeft {
+      @include size(100%, 100%);
+      @include flex(column, center, center, 0);
+      margin: 0 auto;
+
+      .authContent {
+        @include size(85%, auto);
+        @include container($white, $simpleBorder, $largeRadius, transparent, 2rem 3.75rem, 0px 0px 5px 0px #095c12);
+      }
+    }
+
+    .authRight {
+      @include size(50%, 100%);
+      @include flex(column, center, center, 0);
+
+      .authImage {
+        @include size(65%, auto);
+        @include flex(column, center, center, 2.75rem);
+
+        img {
+          @include size(100%, auto);
+          max-width: 40rem;
+        }
+
+        div {
+          @include size(75%, auto);
+          @include flex(column, center, center, 1.5rem);
+          text-align: center;
+
+          img {
+            @include size(14.25rem, auto);
+          }
+
+          h2 {
+            @include text($raleway, 1.5rem, 1.825rem, 700, $black);
+          }
+        }
+      }
+    }
+  }
+}

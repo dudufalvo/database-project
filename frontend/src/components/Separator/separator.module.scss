@@ -1,0 +1,18 @@
+@import '../../styles/mixins.scss';
+
+.separator {
+  @include size(100%, auto);
+  @include flex(row, center, center, 0.75rem);
+
+  .greenTwo {
+    @include size(100%, 1px);
+    @include container($greenTwo, 0, 0, $greenTwo, 0, none);
+  }
+
+  .gray {
+    @include size(100%, 1px);
+    @include container($lightGray, 0, 0, $lightGray, 0, none);
+  }
+
+  span { @include text($montserrat, 0.75rem, 1rem, 400, $black); }
+}
