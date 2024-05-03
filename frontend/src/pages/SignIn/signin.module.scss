@@ -1,0 +1,34 @@
+@import '../../styles/mixins.scss';
+
+.signinContentMiddle {
+  @include size(100%, auto);
+  @include flex(column, center, flex-start, 0.5rem);
+
+  .signinInputs {
+    @include size(100%, auto);
+    @include flex(column, center, flex-start, 2rem);
+  }
+
+  .signinRememberMe {
+    @include size(100%, auto);
+    @include flex($direction: row, $justify: space-between, $align: center);
+
+    input {
+      @include size(1rem, 1rem);
+    }
+
+    label,
+    a {
+      @include text($montserrat, 0.75rem, 1rem, 400, $black);
+    }
+  }
+}
+
+@media (min-width: 900px) {
+  .signinContentMiddle {
+    .signinInputs {
+      @include size(100%, auto);
+      @include flex(column, center, flex-start, 2.25rem);
+    }
+  }
+}

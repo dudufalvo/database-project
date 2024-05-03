@@ -1,0 +1,129 @@
+@import '../../styles/mixins.scss';
+
+.button {
+  @include flex($justify: center, $align: center, $gap: 0.5rem);
+  @include container($greenTwo, 1px solid, $smallRadius, $greenTwo, 0.85rem 1.5rem);
+  @include text($montserrat, 1rem, 1.25rem, 500, $white);
+  cursor: pointer;
+
+  &.fullWidth {
+    width: 100%;
+  }
+
+  &:disabled {
+    border-color: $disabledGreen;
+    pointer-events: none;
+  }
+
+  &.filled {
+
+    &:hover,
+    &:active,
+    &.active {
+      box-shadow: 0px 2px 4px 0px rgba(34, 34, 34, 0.25);
+    }
+
+    &:disabled {
+      background-color: $disabledGreen;
+    }
+
+    &:active,
+    &.active {
+      background-color: $darkGreen;
+      border-color: $darkGreen;
+    }
+  }
+
+  &.outlined {
+    background-color: $mainWhite;
+    color: $greenTwo;
+
+    &:hover {
+      background-color: $hoverGreen;
+    }
+
+    &:active,
+    &.active {
+      background-color: $greenTwo;
+      border-color: $white;
+      color: $white;
+    }
+
+    &:disabled {
+      background-color: $mainWhite;
+      color: $disabledGreen;
+    }
+  }
+
+  &.google {
+    background-color: $white;
+    color: $darkGray;
+    font-weight: 500;
+
+    &:hover {
+      background-color: $hoverGreen;
+    }
+  }
+
+  &.iconOutlined {
+    padding: 0.85rem;
+    background-color: $white;
+    color: $greenTwo;
+
+    svg {
+      @include size(1.15rem, auto);
+    }
+
+    &:hover {
+      background-color: $hoverGreen;
+    }
+
+    &:active,
+    &.active {
+      background-color: $greenTwo;
+      border-color: $white;
+      color: $white;
+    }
+
+    &:disabled {
+      background-color: $mainWhite;
+      color: $disabledGreen;
+    }
+  }
+
+  &.iconFilled {
+    padding: 0.75rem;
+
+    svg {
+      @include size(1.15rem, auto);
+    }
+
+    &:hover,
+    &:active,
+    &.active {
+      box-shadow: 0px 2px 4px 0px rgba(34, 34, 34, 0.25);
+    }
+
+    &:disabled {
+      background-color: $disabledGreen;
+    }
+
+    &:active,
+    &.active {
+      background-color: $darkGreen;
+      border-color: $darkGreen;
+    }
+
+  }
+
+  &.onlyIcon {
+    padding: 0;
+    background-color: transparent;
+    color: $greenTwo;
+    border: none;
+
+    svg {
+      @include size(2rem);
+    }
+  }
+}
