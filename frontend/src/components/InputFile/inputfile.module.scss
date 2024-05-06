@@ -1,0 +1,54 @@
+@import '../../styles/mixins.scss';
+
+.inputFile {
+  @include size(100%, auto);
+  @include flex($justify: center, $align: center);
+  @include container($white, $dashedBorder, $mediumRadius, $darkGray, 0, none);
+  transition: all 0.3s ease-in-out;
+  input { display: none; }
+
+  .inputFileText {
+    @include size(100%, 100%);
+    @include flex(column, center, $gap: 0);
+    @include container(transparent, $simpleBorder, 0, transparent, 1rem, none);
+    @include text($size: 0.75rem, $height: 1rem, $weight: 400, $color: $darkGray);
+    transition: all 0.3s ease-in-out;
+    cursor: pointer;
+  }
+
+  .inputFileImage {
+    @include size(100%, 100%);
+    @include flex($justify: center, $align: center);
+    @include container(transparent, $simpleBorder, 0, transparent, 1rem, none);
+
+    button { padding: 0.25rem; }
+
+    .inputFileGrid {
+      @include size(100%, 100%);
+      @include grid($justify: center, $align: center, $gap: 0.5rem);
+
+      div {
+        @include size(100%, 7.5rem);
+        position: relative;
+
+        img {
+          @include size(100%, 100%);
+          border-radius: $smallRadius;
+          object-fit: cover;
+        }
+
+        button {
+          position: absolute;
+          top: 0.25rem;
+          right: 0.25rem;
+          padding: 0.5rem;
+        }
+      }
+    }
+  }
+
+  &:hover {
+    border-color: $green;
+    .inputFileText { color: $green; }
+  }
+}

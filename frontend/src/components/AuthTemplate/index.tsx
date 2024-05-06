@@ -5,22 +5,20 @@ import { useNavigate } from 'react-router-dom'
 import 'react-toastify/dist/ReactToastify.css'
 
 import type { UseFormReturn } from 'react-hook-form/dist/types'
-import type { SignInType, SignUpType } from 'types/User'
+import type { SignInType, SignUpType, RecoverPasswordType, ResetPasswordType } from 'types/User'
 
 import styles from './authtemplate.module.scss'
 
 import google from 'assets/google.svg'
-import logo from 'assets/logo.png'
-import signImage from 'assets/signImage.png'
 import Button from 'components/Button'
 import Separator from 'components/Separator'
 import toast from 'utils/toast'
 
-type FormType = SignUpType | SignInType;
+type FormType = SignUpType | SignInType | RecoverPasswordType | ResetPasswordType;
 
 type AuthTemplateType<T extends FormType> = {
   children: React.ReactNode,
-  type: 'sign-in' | 'sign-up',
+  type: 'sign-in' | 'sign-up' | 'recover' | 'reset-password',
   methods: UseFormReturn<T>
   handleAuth: () => void
 }
@@ -31,7 +29,7 @@ const AuthTemplate = <T extends FormType>({ children, type, methods, handleAuth 
   const googleRequest = async (accessToken: string) => {
     axios.post(`${import.meta.env.VITE_API_BASE_URL}/users/auth/google_oauth2/callback`, { access_token: accessToken })
       .then(response => {
-        localStorage.setItem('token', response.headers.authorization)
+        localStorage.setItem('token', response.data.access_token)
         toast.success('Logged in successfully with Google')
         navigate('/')
       })
@@ -57,7 +55,7 @@ const AuthTemplate = <T extends FormType>({ children, type, methods, handleAuth 
         <div className={styles.authContent}>
           <div className={styles.authContentContainer}>
             <div className={styles.authContentTop}>
-              <h1>{type === 'sign-in' ? 'Welcome back!' : 'Welcome'}</h1>
+              <h1>{type === 'sign-in' ? 'Welcome back!' : (type == 'sign-up' ? 'Welcome' : "Let's recover your password!")}</h1>
               <h3>{type === 'sign-in' ? 'It\'s never been simpler to colect your soil data.' : 'Please enter your details.'}</h3>
             </div>
 
@@ -75,24 +73,16 @@ const AuthTemplate = <T extends FormType>({ children, type, methods, handleAuth 
                 ? <span>Don't have an account? <a href='/sign-up'>Sign Up</a></span>
                 : <span>Already have an account? <a href='/sign-in'>Sign In</a></span>}
             </div>
-            <Separator>OR</Separator>
-            <Button handle={googleLogin} variant='google' fullWidth={true}>
-              <img src={google} alt='Google' />
-              {type.charAt(0).toUpperCase() + type.slice(1).replace('-', ' ')} with Google
-            </Button>
+            {(type != 'recover' && type != 'reset-password') && <Separator>OR</Separator>}
+            {(type != 'recover' && type != 'reset-password') &&
+              <Button handle={googleLogin} variant='google' fullWidth={true}>
+                <img src={google} alt='Google' />
+                {type.charAt(0).toUpperCase() + type.slice(1).replace('-', ' ')} with Google
+              </Button>
+            }
           </div>
         </div>
       </div>
-
-      {/* <div className={styles.authRight}>
-        <div className={styles.authImage}>
-          <img src={signImage} alt='sign-image' />
-          <div>
-            <img src={logo} alt='logo' />
-            <h2>It's never been simpler to plan meals with your friends!</h2>
-          </div>
-        </div>
-      </div> */}
     </div>
   )
 }

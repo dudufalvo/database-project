@@ -1,0 +1,55 @@
+@import '../../../styles/mixins.scss';
+
+.modalContent {
+  @include flex(column,space-between, flex-start);
+  @include container($mainWhite, none, 0, transparent, 3rem 10%);
+  @include size(100%);
+  position: absolute;
+  top: 0;
+  height: 100%;
+  z-index: 4;
+  opacity: 1;
+  overflow-y: auto;
+  outline: none;
+}
+
+.modalOverlay {
+  @include flex(row, center, center);
+  background-color: $modalShadow;
+  position: static;
+  overflow-y: auto;
+}
+
+.modalButtons {
+  @include flex(row, center, center, 0.5rem);
+  width: 100%;
+}
+
+.modalFields {
+  @include flex(column, flex-start, flex-start, 2rem);
+  width: 100%;
+  .modalTitle { @include text($raleway, 1.5rem, 1.75rem, 700, $black); } 
+}
+
+
+.groupModalDropdown {
+  @include flex(column, center, center, 0.5rem);
+  width: 100%;
+}
+
+@media (min-width: 900px) {
+  .modalContent {
+    @include container($mainWhite, $simpleBorder, $mediumLargeRadius, $green, 3.5rem 4rem);
+    max-width: 60rem;
+    position: relative;
+    height: fit-content;
+  }
+
+  .modalOverlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+  }
+}

@@ -1,0 +1,59 @@
+@import '../../styles/mixins.scss';
+
+.dropdownitemContainer {
+  @include size(100%, 100%);
+  @include flex($justify: space-between);
+  @include container(transparent, none, none, transparent, 0.75rem 0.5rem, none);
+
+  div {
+    @include flex($gap: 0.75rem);
+
+    img {
+      @include size(1.5rem, 1.5rem);
+      border-radius: 50%;
+    }
+
+    path { fill: $green; }
+    
+    label {
+      @include size(100%, 100%);
+      @include flex($justify: space-between, $align: flex-start, $gap: 0);
+      @include text($montserrat, 1rem, 1.375rem, 400, $black);
+      cursor: pointer;
+    }
+  }
+
+  input[type="checkbox"] {
+    @include size(1.5rem, 1.5rem);
+    @include container($mainWhite, $simpleBorder, 50%, $darkGray, 0, none);
+    display: grid;
+    place-content: center;
+    -webkit-appearance: none;
+    appearance: none;
+    cursor: pointer;
+  }
+
+  input[type="checkbox"]::before {
+    @include size(1.5rem, 1.5rem);
+    @include container($green, $simpleBorder, 50%, transparent, 0);
+    content: '';
+    transform: scale(0);
+    background-image: url('../../assets/checkboxRound.svg');
+    transition: 120ms transform ease-in-out;
+  }
+
+  input[type="checkbox"]:checked::before { transform: scale(1); }
+
+  input[type="checkbox"]:checked { @include container($green, none, 50%, $green, 0, none); }
+}
+
+.dropdownitemContainer:hover {
+  input[type="checkbox"] {
+    @include container($fillGreen, $simpleBorder, 50%, $green, 0, none);
+    display: grid;
+    place-content: center;
+    -webkit-appearance: none;
+    appearance: none;
+    cursor: pointer;
+  }
+}

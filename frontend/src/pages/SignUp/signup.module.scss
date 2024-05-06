@@ -2,5 +2,10 @@
 
 .signupContentMiddle {
   @include size(100%, auto);
-  @include flex(column, center, center, 1.5rem);
+  @include flex(row, center, center, 1.5rem);
+
+  .signupContentInputs {
+    @include size(100%, auto);
+    @include flex(column, center, center, 1.5rem);
+  }
 }

@@ -1,0 +1,15 @@
+@import '../../styles/mixins.scss';
+
+.selectContainer {
+  @include flex(column, flex-start, stretch, 0.5rem);
+  @include text($montserrat, 1rem, 1.375rem, 400, $black);
+  width: 100%;
+
+  .indicatorContainer { @include flex(row, flex-start, center, 0.5rem); }
+
+  .hideIndicator { display: none; }
+
+  .optionsContainer { @include flex(row, flex-start, center, 0.5rem, wrap); }
+
+  .controlIcon { padding-left: 0.5rem; }
+}

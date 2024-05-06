@@ -1,0 +1,10 @@
+@import '../../../styles/mixins.scss';
+
+.deleteModal {
+  @include flex(column, flex-start, center, 3rem);
+  width: 100%;
+}
+
+@media (min-width: 900px) {
+  .deleteModal { @include flex(column, center, center, 1.5rem); }
+}

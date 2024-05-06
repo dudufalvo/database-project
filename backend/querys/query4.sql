@@ -1,0 +1,2 @@
+ALTER TABLE client
+ALTER COLUMN role SET DEFAULT 'regular';

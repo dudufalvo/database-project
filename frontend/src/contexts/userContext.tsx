@@ -6,11 +6,12 @@ import useRequest from 'hooks/useRequest'
 import toast from 'utils/toast'
 
 type UserType = {
-  id: string;
-  name: string;
+  first_name: string;
+  last_name: string;
   email: string;
-  phone: string;
-  image_url: string;
+  phone_number: string;
+  nif: string;
+  role: string;
 }
 
 type ContextType = {
@@ -18,13 +19,13 @@ type ContextType = {
   updateUserProfile: (params?: FormData | undefined) => void;
 }
 
-const UserContext = createContext<ContextType>({ user: { id: '', name: '', email: '', phone: '', image_url: '' }, updateUserProfile: () => { } })
+const UserContext = createContext<ContextType>({ user: { first_name: '', last_name: '', email: '', phone_number: '', nif: '', role: '' }, updateUserProfile: () => { } })
 
 export const UserProvider = ({ children }: { children: React.ReactNode }) => {
   const navigate = useNavigate()
 
   const { data, doRequest: getUser } = useRequest(api.getUser, {
-    onError: () => navigate('/sign-in')
+    onError: () => localStorage.removeItem('token')
   })
 
   const { doRequest: updateUserProfile } = useRequest<FormData>(api.updateUser, {
@@ -38,7 +39,7 @@ export const UserProvider = ({ children }: { children: React.ReactNode }) => {
   }, [])
 
   return (
-    <UserContext.Provider value={{ user: data?.data?.user, updateUserProfile }}>
+    <UserContext.Provider value={{ user: data?.user, updateUserProfile }}>
       {children}
     </UserContext.Provider >
   )
