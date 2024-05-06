@@ -25,11 +25,11 @@ const SignIn = () => {
   })
 
   const signInUser = async (data: SignInType) => {
-    axios.post(`${import.meta.env.VITE_API_BASE_URL}/users/login`, { user: data })
+    axios.post(`${import.meta.env.VITE_API_BASE_URL}/client/login`, { data })
       .then(response => {
-        localStorage.setItem('token', response.headers.authorization)
+        localStorage.setItem('token', response.data.access_token)
         toast.success('Logged in successfully')
-        navigate('/home')
+        navigate('/')
       })
       .catch(() => {
         toast.error('Failed to login')
@@ -46,7 +46,7 @@ const SignIn = () => {
 
         <div className={styles.signinRememberMe}>
           <Checkbox name='rememberMe' label='Remember me' />
-          <a href="/forgot-password">Forgot password?</a>
+          <a href="/client/forgot-password">Forgot password?</a>
         </div>
       </form>
     </AuthTemplate>

@@ -1,8 +1,23 @@
 export type SignUpType = {
-  name: string,
+  first_name: string,
+  last_name: string,
   email: string,
   password: string,
-  password_confirmation: string
+  phone_number: string,
+  nif: string
+}
+
+export type RecoverPasswordType = {
+  email: string
+}
+
+export type ResetPasswordType = {
+  password: string
+}
+
+export type ResetPasswordRequestType = {
+  password: string,
+  reset_token: string
 }
 
 export type InputFormType = {

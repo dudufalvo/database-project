@@ -1,0 +1,40 @@
+@import '../../../styles/mixins.scss';
+
+.settings {
+  @include flex(column, $align: flex-start);
+  width: 100%;
+
+  .profileLeft {
+    @include flex(column, $align: flex-start);
+    width: 100%;
+  }
+
+  .profileRight {
+    @include flex(column, $align: flex-start);
+    width: 100%;
+
+    // input main
+    >div {
+      @include flex(column, $align: flex-start);
+      height: 100%;
+
+      // input form
+      >div { height: 100%; }
+    }
+  }
+}
+
+@media (min-width: 760px) {
+  .settings {
+    // submit button and profile left/right 
+    >button, >div { max-width: 27rem; }
+
+    @include flex(row, $align: flex-start);
+    width: 100%;
+
+    &:last-child { @include flex(column, $align: flex-start); }
+
+    // profile left > Input File > Input File Text
+    .profileLeft >div >div { min-height: 20rem; }
+  }
+}

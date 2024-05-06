@@ -1,3 +1,5 @@
 backend/.env
 backend/.flaskenv
 frontend/.env
+env/
+backend/__pycache__/

@@ -4,22 +4,48 @@ import SignIn from 'pages/SignIn'
 import SignUp from 'pages/SignUp'
 import Home from 'pages/Home'
 import { PrivateRoute, NotAuthenticatedRoute } from 'utils/routes'
+import { UserProvider } from './contexts/userContext'
+import { Navbar } from './components/Navbar'
+import { Outlet } from 'react-router-dom'
+import RecoverPassword from 'pages/RecoverPassword'
+import ResetPassword from 'pages/ResetPassword'
+import Account from 'pages/Account'
+import { Navigate } from 'react-router-dom'
+import AdminPanel from 'pages/AdminPanel'
+import Notifications from 'pages/Notifications'
+import Reservations from 'pages/Reservations'
+import Messages from 'pages/Messages'
+import Statistics from 'pages/Statistics'
 
 const App = () => {
   return (
     <BrowserRouter>
       <Routes>
-        <Route path='/sign-up' element={<SignUp />} />
-        <Route path='/sign-in' element={<SignIn />} />
-        <Route path='/' element={<Home />} />
-      {/*   <Route element={<NotAuthenticatedRoute />} >
+        <Route element={<NotAuthenticatedRoute />} >
           <Route path='/sign-up' element={<SignUp />} />
           <Route path='/sign-in' element={<SignIn />} />
-          <Route path='/' element={<Home />} />
+          <Route path='/client/forgot-password' element={<RecoverPassword />} />
+          <Route path='/client/reset/:token' element={<ResetPassword />} />
         </Route>
         <Route element={<PrivateRoute />} >
-          
-        </Route> */}
+          <Route
+              element={
+                <UserProvider>
+                  <Navbar />
+                  <Outlet />
+                </UserProvider>
+              }
+            >
+            <Route path='*' element={<Navigate to='/' />} />
+            <Route path='/' element={<Home />} />
+            <Route path='/reservations' element={<Reservations />} />
+            <Route path='/notifications' element={<Notifications />} />
+            <Route path='/messages' element={<Messages />} />
+            <Route path='/statistics' element={<Statistics />} />
+            <Route path='/admin-panel' element={<AdminPanel />} />
+            <Route path='/account' element={<Account />} />
+          </Route>
+        </Route>
       </Routes>
     </BrowserRouter>
   )

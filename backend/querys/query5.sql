@@ -1,0 +1,1 @@
+insert into client (first_name, last_name, password, email, phone_number, nif, role) values ('super', 'admin', 'password', 'super.admin@gmail.com', 000000000, 000000000, 'superadmin')
