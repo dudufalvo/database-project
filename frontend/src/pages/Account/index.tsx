@@ -1,6 +1,5 @@
 import { useState } from 'react'
 
-
 import styles from './account.module.scss'
 
 import Settings from 'components/Account/Settings'

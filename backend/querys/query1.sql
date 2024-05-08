@@ -38,7 +38,7 @@ CREATE TABLE waitlist (
 
 CREATE TABLE manual_notification (
 	client_id		 BIGINT NOT NULL,
-	notification_id	 BIGINT,
+	notification_id	 BIGSERIAL,
 	notification_message	 VARCHAR(255),
 	notification_is_read	 BOOL,
 	notification_client_id BIGINT NOT NULL,

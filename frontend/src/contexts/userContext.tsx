@@ -1,5 +1,4 @@
 import { createContext, useContext, useEffect } from 'react'
-import { useNavigate } from 'react-router-dom'
 
 import api from 'api/api'
 import useRequest from 'hooks/useRequest'
@@ -22,8 +21,6 @@ type ContextType = {
 const UserContext = createContext<ContextType>({ user: { first_name: '', last_name: '', email: '', phone_number: '', nif: '', role: '' }, updateUserProfile: () => { } })
 
 export const UserProvider = ({ children }: { children: React.ReactNode }) => {
-  const navigate = useNavigate()
-
   const { data, doRequest: getUser } = useRequest(api.getUser, {
     onError: () => localStorage.removeItem('token')
   })

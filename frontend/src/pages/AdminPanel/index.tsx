@@ -102,33 +102,33 @@ const AdminPanel = () => {
         <span>Admin Panel</span>
     
         <TableContainer component={Paper}>
-      <Table sx={{ minWidth: 700 }} aria-label="customized table">
-        <TableHead>
-          <TableRow>
-            <StyledTableCell>First Name</StyledTableCell>
-            <StyledTableCell align="right">Last Name</StyledTableCell>
-            <StyledTableCell align="right">Email</StyledTableCell>
-            <StyledTableCell align="right">Phone Number</StyledTableCell>
-            <StyledTableCell align="right">NIF</StyledTableCell>
-            <StyledTableCell align="right">Admin</StyledTableCell>
-          </TableRow>
-        </TableHead>
-        <TableBody>
-          {data.map((row) => (
-            <StyledTableRow key={row.nif}>
-              <StyledTableCell component="th" scope="row">
-                {row.first_name}
-              </StyledTableCell>
-              <StyledTableCell align="right">{row.last_name}</StyledTableCell>
-              <StyledTableCell align="right">{row.email}</StyledTableCell>
-              <StyledTableCell align="right">{row.phone_number}</StyledTableCell>
-              <StyledTableCell align="right">{row.nif}</StyledTableCell>
-              <StyledTableCell align="right">{<TableCheckbox email={row.email} role={row.role}/>}</StyledTableCell>
-            </StyledTableRow>
-          ))}
-        </TableBody>
-      </Table>
-    </TableContainer>
+          <Table sx={{ minWidth: 700 }} aria-label="customized table">
+            <TableHead>
+              <TableRow>
+                <StyledTableCell>First Name</StyledTableCell>
+                <StyledTableCell align="right">Last Name</StyledTableCell>
+                <StyledTableCell align="right">Email</StyledTableCell>
+                <StyledTableCell align="right">Phone Number</StyledTableCell>
+                <StyledTableCell align="right">NIF</StyledTableCell>
+                <StyledTableCell align="right">Admin</StyledTableCell>
+              </TableRow>
+            </TableHead>
+            <TableBody>
+              {data.map((row) => (
+                <StyledTableRow key={row.nif}>
+                  <StyledTableCell component="th" scope="row">
+                    {row.first_name}
+                  </StyledTableCell>
+                  <StyledTableCell align="right">{row.last_name}</StyledTableCell>
+                  <StyledTableCell align="right">{row.email}</StyledTableCell>
+                  <StyledTableCell align="right">{row.phone_number}</StyledTableCell>
+                  <StyledTableCell align="right">{row.nif}</StyledTableCell>
+                  <StyledTableCell align="right">{<TableCheckbox email={row.email} role={row.role}/>}</StyledTableCell>
+                </StyledTableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </TableContainer>
       </div>
     </div>
   )
