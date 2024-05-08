@@ -286,3 +286,100 @@ def turn_admin_into_client():
     conn.rollback()
     db_cur.close()
     return jsonify({"error": str(e)}), 500
+
+@api.route("/client/delete", methods=["DELETE"])
+@jwt_required()
+def delete_client():
+  user_id = get_jwt_identity()
+  db_cur = conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
+
+  try:
+    db_cur.execute("SELECT * FROM client WHERE id = %s;", (user_id,))
+    user = db_cur.fetchone()
+
+    if not user:
+      db_cur.close()
+      return jsonify({"error": "User not found"}), 404
+    else:
+      db_cur.execute("DELETE FROM client WHERE id = %s;", (user_id,))
+      conn.commit()
+      db_cur.close()
+      return jsonify({"message": "User deleted"}), 200
+
+  except Exception as e:
+    conn.rollback()
+    db_cur.close()
+    return jsonify({"error": str(e)}), 500
+
+@api.route("/manual-notification/create", methods=["POST"])
+@jwt_required()
+@admin_required
+def create_manual_notification():
+  sender_user_id = get_jwt_identity()
+  data = request.json['data']
+  if "," in data["email"]:
+    list_receivers_email = data["email"].replace(" ", "").split(",")
+  else:
+    list_receivers_email = [data["email"]]
+  message = data["message"]
+  db_cur = conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
+
+  for receiver_email in list_receivers_email:
+    if receiver_email == "all.clients@gmail.com":
+      try:
+        db_cur.execute("SELECT * FROM client;")
+        users = db_cur.fetchall()
+
+        for user in users:
+          if user["id"] != sender_user_id:
+            db_cur.execute("INSERT INTO manual_notification (client_id, notification_client_id, notification_message, notification_is_read) VALUES (%s, %s, %s, %s);", (sender_user_id, user["id"], message, False,))
+        conn.commit()
+        return jsonify({"message": "Notification created"}), 201
+      except Exception as e:
+        conn.rollback()
+        db_cur.close()
+        return jsonify({"error": str(e)}), 500
+    else:
+      try:
+        db_cur.execute("SELECT * FROM client WHERE email = %s;", (receiver_email,))
+        user = db_cur.fetchone()
+
+        if not user:
+          db_cur.close()
+          return jsonify({"error": "User not found"}), 404
+        else:
+          db_cur.execute("INSERT INTO manual_notification (client_id, notification_client_id, notification_message, notification_is_read) VALUES (%s, %s, %s, %s);", (sender_user_id, user["id"], message, False,))
+          conn.commit()
+          return jsonify({"message": "Notification created"}), 201
+      except Exception as e:
+        conn.rollback()
+        db_cur.close()
+        return jsonify({"error": str(e)}), 500
+
+@api.route("/manual-notification", methods=["GET"])
+@jwt_required()
+def get_manual_notifications():
+  user_id = get_jwt_identity()
+  db_cur = conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
+  
+  try:
+    db_cur.execute("SELECT * FROM manual_notification WHERE notification_client_id = %s or client_id = %s;", (user_id, user_id,))
+    notifications = db_cur.fetchall()
+
+    formated_notifications = []
+    for notification in notifications:
+      # get the sender name
+      db_cur.execute("SELECT * FROM client WHERE id = %s;", (notification['client_id'],))
+      sender = db_cur.fetchone()
+
+      # get the receiver name
+      db_cur.execute("SELECT * FROM client WHERE id = %s;", (notification['notification_client_id'],))
+      receiver = db_cur.fetchone()
+
+      formated_notifications.append({"notification_id": notification['notification_id'], "sender": sender['first_name'] + " " + sender['last_name'], "sender_email": sender["email"], "receiver": receiver['first_name'] + " " + receiver['last_name'], "receiver_email": receiver["email"], "message": notification['notification_message'], "is_read": notification['notification_is_read']})
+    db_cur.close()
+    return jsonify(formated_notifications), 200
+  except Exception as e:
+    conn.rollback()
+    db_cur.close()
+    return jsonify({"error": str(e)}), 500
