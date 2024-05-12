@@ -35,6 +35,6 @@
     &:last-child { @include flex(column, $align: flex-start); }
 
     // profile left > Input File > Input File Text
-    .profileLeft >div >div { min-height: 20rem; }
+    .profileLeft >div >div { min-height: 25.5rem; }
   }
 }

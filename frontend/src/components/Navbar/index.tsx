@@ -35,9 +35,9 @@ export const Navbar = () => {
         <div className={styles.links}>
           <a href='/reservations'className={''}>Reservations</a>
           <a href='/notifications'>Notifications</a>
-          <a href='/messages'>Messages</a>
-          <a href='/statistics'>Statistics</a>
-          <a href='/admin-panel'>Admin</a>
+          {user?.role.includes('admin') && <a href='/messages'>Messages</a>}
+          {user?.role.includes('admin') && <a href='/statistics'>Statistics</a>}
+          {user?.role.includes('admin') && <a href='/admin-panel'>Admin</a>}
           <div className={styles.dropdown}>
             <a className={styles.dropdownText} href='/account?tab=settings'>
               <img src='https://upload.wikimedia.org/wikipedia/commons/thumb/7/72/Avatar_icon_green.svg/2048px-Avatar_icon_green.svg.png' alt="picture" className={styles.profilePicture} />
