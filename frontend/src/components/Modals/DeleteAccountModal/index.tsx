@@ -5,10 +5,9 @@ import { deleteAccountValidationSchema } from 'src/schemas'
 
 import styles from './delete.module.scss'
 
-import api from 'api/api'
+import axios from 'axios'
 import InputPassword from 'components/Form/InputPassword'
 import { ModalWrapper } from 'components/Modals'
-import useRequest from 'hooks/useRequest'
 import toast from 'utils/toast'
 
 type DeleteAccountFormType = {
@@ -27,18 +26,21 @@ const DeleteAccountModal = ({ isOpen, handleClosing }: DeleteAccountModalType) =
     resolver: yupResolver(deleteAccountValidationSchema)
   })
 
-  const { doRequest: deleteAccountPassword } = useRequest<DeleteAccountFormType>(api.deleteUser, {
-    onSuccess: () => {
-      toast.success('Account deleted successfully')
-      handleClosing()
-      localStorage.removeItem('token')
-      navigate('/sign-in')
-    },
-    onError: () => toast.error('Error deleting account')
-  })
+  const handleDelete = (data: DeleteAccountFormType) => {
+    axios.post(`${import.meta.env.VITE_API_BASE_URL}/client/delete`, { data } ,{ headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` } })
+      .then(() => {
+        toast.success('Account deleted successfully')
+        handleClosing()
+        localStorage.removeItem('token')
+        navigate('/sign-in')
+      })
+      .catch(() => {
+        toast.error('Error deleting account')
+      });
+  }
 
   return (
-    <ModalWrapper title='Delete Account' isOpen={isOpen} submitTxt='Delete' methods={methods} handleClosing={handleClosing} handleCreating={deleteAccountPassword} >
+    <ModalWrapper title='Delete Account' isOpen={isOpen} submitTxt='Delete' methods={methods} handleClosing={handleClosing} handleCreating={handleDelete} >
       <FormProvider {...methods}>
         <form className={styles.deleteModal}>
           <InputPassword label='Confirm your password' name='password' id='password' placeholder='Insert password' isRequired={true} />

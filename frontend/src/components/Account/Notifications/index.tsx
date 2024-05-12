@@ -103,9 +103,8 @@ const Notifications = () => {
   , []);
 
   return (
-    <div className={styles.main}>
-      <div className={styles.table}>
-        <span>Notifications</span>
+    <div className={styles.notifications}>
+      <h2>Notifications</h2>
 
       <TableContainer component={Paper}>
         <Table sx={{ minWidth: 700 }} aria-label="customized table">
@@ -131,7 +130,6 @@ const Notifications = () => {
           </TableBody>
         </Table>
       </TableContainer>
-    </div>
     </div>
   )
 }

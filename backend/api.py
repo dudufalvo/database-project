@@ -69,7 +69,6 @@ def register_user():
       db_cur.close()
       return jsonify({"error": "User already exists"}), 400
     else: 
-      print(data["first_name"], data["last_name"], data["password"], data["email"], data["phone_number"], data["nif"], data["role"])
       db_cur.execute("INSERT INTO client (first_name, last_name, password, email, phone_number, nif, role) VALUES (%s, %s, %s, %s, %s, %s, %s);", (data["first_name"], data["last_name"], generate_password_hash(data["password"],"pbkdf2"), data["email"], data["phone_number"], data["nif"], data["role"],))
       conn.commit()
 
@@ -164,7 +163,6 @@ def recover_password():
 @api.route("/client/reset-password", methods=["POST"])
 def reset_password():
   data = request.json['data']
-  print(data)
   db_cur = conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
   
   try:
@@ -175,7 +173,6 @@ def reset_password():
       return jsonify({"error": "Reset token and password are required"}), 400
 
     user_id = decode_token(reset_token)["sub"]
-    print(user_id)
     db_cur.execute("SELECT * FROM client WHERE id = %s;", (user_id,))
     user = db_cur.fetchone()
 
@@ -193,6 +190,64 @@ def reset_password():
     db_cur.close()
     return jsonify({"error": str(e)}), 500
 
+@api.route("/client/password", methods=["PUT"])
+@jwt_required()
+def update_password():
+  data = request.json['data']
+  db_cur = conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
+  
+  try:
+    user_id = get_jwt_identity()
+    db_cur.execute("SELECT * FROM client WHERE id = %s;", (user_id,))
+    user = db_cur.fetchone()
+
+    if not user:
+      db_cur.close()
+      return jsonify({"error": "User not found"}), 404
+    else:
+      if check_password_hash(user["password"], data["current_password"]):
+        db_cur.execute("UPDATE client SET password = %s WHERE id = %s;", (generate_password_hash(data["password"],"pbkdf2"), user_id,))
+        conn.commit()
+        db_cur.close()
+        return jsonify({"message": "Password updated"}), 200
+      else:
+        db_cur.close()
+        return jsonify({"error": "Invalid credentials"}), 401
+
+  except Exception as e:
+    conn.rollback()
+    db_cur.close()
+    return jsonify({"error": str(e)}), 500
+
+@api.route("/client/delete", methods=["POST"])
+@jwt_required()
+def delete_user():
+  data = request.json['data']
+  db_cur = conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
+
+  try:
+    user_id = get_jwt_identity()
+    db_cur.execute("SELECT * FROM client WHERE id = %s;", (user_id,))
+    user = db_cur.fetchone()
+
+    if not user:
+      db_cur.close()
+      return jsonify({"error": "User not found"}), 404
+    else:
+      if check_password_hash(user["password"], data["password"]):
+        db_cur.execute("DELETE FROM client WHERE id = %s;", (user_id,))
+        conn.commit()
+        db_cur.close()
+        return jsonify({"message": "User deleted"}), 200
+      else:
+        db_cur.close()
+        return jsonify({"error": "Invalid credentials"}), 401
+
+  except Exception as e:
+    conn.rollback()
+    db_cur.close()
+    return jsonify({"error": str(e)}), 500
+
 @api.route("/client/logout", methods=["POST"])
 def logout_user():
   return jsonify({"message": "User logged out"}), 200
@@ -204,20 +259,38 @@ def refresh_token():
   refresh_token = create_refresh_token(identity=request.json["id"], additional_claims={"role": request.json["role"]})
   return jsonify({"access_token": access_token, "refresh_token": refresh_token}), 200
 
-@api.route("/client", methods=["GET"])
+@api.route("/client", methods=["GET", "PUT"])
 @jwt_required()
 def get_client():
   user_id = get_jwt_identity()
   db_cur = conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
-  db_cur.execute("SELECT * FROM client WHERE id = %s;", (user_id,))
-  user = db_cur.fetchone()
 
-  if user:
-    db_cur.close()
-    return jsonify({"user": {"first_name": user['first_name'], "last_name": user['last_name'], "email": user['email'], "phone_number": user['phone_number'], "nif": user['nif'], "role": user['role']}}), 200
-  else:
-    db_cur.close()
-    return jsonify({"error": "User not found"}), 404
+  if request.method == "GET":
+    db_cur.execute("SELECT * FROM client WHERE id = %s;", (user_id,))
+    user = db_cur.fetchone()
+
+    if user:
+      db_cur.close()
+      return jsonify({"user": {"first_name": user['first_name'], "last_name": user['last_name'], "email": user['email'], "phone_number": user['phone_number'], "nif": user['nif'], "role": user['role']}}), 200
+    else:
+      db_cur.close()
+      return jsonify({"error": "User not found"}), 404
+
+  if request.method == "PUT":
+    db_cur.execute("SELECT * FROM client WHERE id = %s;", (user_id,))
+    user = db_cur.fetchone()
+
+    if user:
+      print("---------------------------------")
+      print(request.json)
+      data = request.json['data']
+      db_cur.execute("UPDATE client SET first_name = %s, last_name = %s, email = %s, phone_number = %s WHERE id = %s;", (data["first_name"], data["last_name"], data["email"], data["phone_number"], user_id,))
+      conn.commit()
+      db_cur.close()
+      return jsonify({"message": "User updated"}), 200
+    else:
+      db_cur.close()
+      return jsonify({"error": "User not found"}), 404
 
 @api.route("/clients", methods=["GET"])
 @jwt_required()
@@ -250,7 +323,6 @@ def turn_client_into_admin():
   try:
     db_cur.execute("SELECT * FROM client WHERE email = %s;", (data["email"],))
     user = db_cur.fetchone()
-    print(user['id'])
 
     if not user:
       db_cur.close()

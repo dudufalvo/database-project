@@ -6,6 +6,7 @@ import Settings from 'components/Account/Settings'
 import Button from 'components/Button'
 import { DeleteAccountModal } from 'components/Modals'
 import Tabs from 'components/Tab'
+import Notifications from 'components/Account/Notifications'
 
 const Account = () => {
   const [deleteModal, setDeleteModal] = useState(false)
@@ -20,7 +21,7 @@ const Account = () => {
         <Tabs
           tabs={[
             { title: 'Settings', children: <Settings /> },
-            { title: 'Notifications', children: <Settings /> },
+            { title: 'Notifications', children: <Notifications /> },
             { title: 'My Reservations', children: <Settings /> }
           ]} />
       </div>

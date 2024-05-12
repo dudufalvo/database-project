@@ -13,9 +13,16 @@ type UserType = {
   role: string;
 }
 
+type ProfileFormType = {
+  first_name: string;
+  last_name: string;
+  email: string;
+  phone_number: string;
+};
+
 type ContextType = {
   user: UserType;
-  updateUserProfile: (params?: FormData | undefined) => void;
+  updateUserProfile: (params?: ProfileFormType | undefined) => void;
 }
 
 const UserContext = createContext<ContextType>({ user: { first_name: '', last_name: '', email: '', phone_number: '', nif: '', role: '' }, updateUserProfile: () => { } })
@@ -25,8 +32,11 @@ export const UserProvider = ({ children }: { children: React.ReactNode }) => {
     onError: () => localStorage.removeItem('token')
   })
 
-  const { doRequest: updateUserProfile } = useRequest<FormData>(api.updateUser, {
-    onSuccess: () => getUser(),
+  const { doRequest: updateUserProfile } = useRequest<ProfileFormType>(api.updateUser, {
+    onSuccess: () => {
+      toast.success('Profile updated successfully')
+      getUser()
+    },
     onError: () => toast.error('Error updating profile')
   })
 
