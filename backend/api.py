@@ -455,3 +455,31 @@ def get_manual_notifications():
     conn.rollback()
     db_cur.close()
     return jsonify({"error": str(e)}), 500
+
+@api.route("/manual-notification/<int:notification_id>/read", methods=["PUT"])
+@jwt_required()
+def update_manual_notification(notification_id):
+  user_id = get_jwt_identity()
+  data = request.json['data']
+  db_cur = conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
+  
+  try:
+    db_cur.execute("SELECT * FROM manual_notification WHERE notification_id = %s;", (notification_id,))
+    notification = db_cur.fetchone()
+
+    if not notification:
+      db_cur.close()
+      return jsonify({"error": "Notification not found"}), 404
+    else:
+      if user_id == notification["notification_client_id"]:
+        db_cur.execute("UPDATE manual_notification SET notification_is_read = %s WHERE notification_id = %s;", (data["is_read"], notification_id,))
+        conn.commit()
+        db_cur.close()
+        return jsonify({"message": "Notification updated"}), 200
+      else:
+        db_cur.close()
+        return jsonify({"error": "Unauthorized"}), 403
+  except Exception as e:
+    conn.rollback()
+    db_cur.close()
+    return jsonify({"error": str(e)}), 500
