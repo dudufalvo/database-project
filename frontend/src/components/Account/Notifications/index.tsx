@@ -43,45 +43,34 @@ type TableMessageType = {
 }
 
 type TableCheckboxType = {
+  notification_id: number,
   sender_email: string,
-  receiver_email: string,
   is_read: boolean
 }
 
 type ClientRequestType = {
-  email: string
+  is_read: boolean
 }
 
-const TableCheckbox = ({ sender_email, receiver_email, is_read }: TableCheckboxType) => {
+const TableCheckbox = ({ notification_id, sender_email, is_read }: TableCheckboxType) => {
   const { user } = useUser()
 
-  const handleChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+  const handleChange = () => {
     const data: ClientRequestType = {
-      email: receiver_email
+      is_read: !is_read
     }
 
-    if (event.target.checked) {
-      axios.post(`${import.meta.env.VITE_API_BASE_URL}/client/admin`, { data } ,{ headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` } })
+    axios.put(`${import.meta.env.VITE_API_BASE_URL}/manual-notification/${notification_id}/read`, { data } ,{ headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` } })
       .then(() => {
-        toast.success('User promoted to admin');
+        toast.success('Notification read changed successfully');
       })
       .catch(() => {
-        toast.error('Error promoting user to admin');
-      });
-    }
-    else {
-      axios.post(`${import.meta.env.VITE_API_BASE_URL}/client/regular`, { data }, { headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` } })
-      .then(() => {
-        toast.success('User demoted to regular');
+        toast.error('Error changing notification read');
       })
-      .catch(() => {
-        toast.error('Error demoting user to regular');
-      });
-    }
   }
 
   return (
-    <input type='checkbox' defaultChecked={is_read} disabled={user.email == sender_email} onChange={handleChange} />
+    <input type='checkbox' defaultChecked={is_read} disabled={user?.email == sender_email} onChange={handleChange} />
   )
 }
 
@@ -102,6 +91,8 @@ const Notifications = () => {
   }
   , []);
 
+  const sortedData = data.sort((a, b) => b.notification_id - a.notification_id);
+
   return (
     <div className={styles.notifications}>
       <h2>Notifications</h2>
@@ -117,14 +108,14 @@ const Notifications = () => {
             </TableRow>
           </TableHead>
           <TableBody>
-            {data.map((row) => (
+            {sortedData.map((row) => (
               <StyledTableRow key={row.notification_id}>
                 <StyledTableCell component="th" scope="row">
                   {row.sender}
                 </StyledTableCell>
                 <StyledTableCell align="right">{row.receiver}</StyledTableCell>
                 <StyledTableCell align="right">{row.message}</StyledTableCell>
-                <StyledTableCell align="right">{<TableCheckbox sender_email={row.sender_email} receiver_email={row.receiver_email} is_read={row.is_read}/>}</StyledTableCell>
+                <StyledTableCell align="right">{<TableCheckbox notification_id={row.notification_id} sender_email={row.sender_email} is_read={row.is_read}/>}</StyledTableCell>
               </StyledTableRow>
             ))}
           </TableBody>
