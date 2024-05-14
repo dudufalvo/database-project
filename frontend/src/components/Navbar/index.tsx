@@ -29,7 +29,6 @@ export const Navbar = () => {
     <>
       <nav className={styles.navbar}>
         <a href='/' className={styles.logo}>
-          <img src={logo} alt="logo" />
           <img src={logoText} alt="logo" />
         </a>
         <div className={styles.links}>

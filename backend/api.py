@@ -619,4 +619,151 @@ def get_prices():
   except Exception as e:
     conn.rollback()
     db_cur.close()
-    return jsonify({"error": str(e)}), 500  
+    return jsonify({"error": str(e)}), 500
+
+@api.route("/prices/active", methods=["GET"])
+@jwt_required()
+def get_active_prices():
+  db_cur = conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
+
+  try:
+    db_cur.execute("SELECT * FROM price WHERE is_active = %s;", (True,))
+    prices = db_cur.fetchall()
+
+    formated_prices = []
+    for price in prices:
+      formated_prices.append({"price_id": price['id'], "price_value": price['price_value'], "price_type": price['price_type']})
+    db_cur.close()
+    return jsonify(formated_prices), 200
+  except Exception as e:
+    conn.rollback()
+    db_cur.close()
+    return jsonify({"error": str(e)}), 500
+
+@api.route("/prices/active/<string:date>", methods=["GET"])
+@jwt_required()
+def get_active_prices_by_date(date):
+  db_cur = conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
+
+  try:
+    # verifies if the date is a weekday or weekend
+    date_obj = datetime.datetime.strptime(date, "%Y-%m-%d")
+    if date_obj.weekday() < 5:
+      price_type = "SEMANA"
+    else:
+      price_type = "FIM_SEMANA"
+      
+    db_cur.execute("SELECT * FROM price WHERE is_active = %s and price_type LIKE %s;", (True, price_type+'%',))
+    prices = db_cur.fetchall()
+    
+    formated_prices = []
+    for price in prices:
+      formated_prices.append({"price_id": price['id'], "price_value": price['price_value'], "price_type": price['price_type']})
+    db_cur.close()
+    return jsonify(formated_prices), 200
+  except Exception as e:
+    conn.rollback()
+    db_cur.close()
+    return jsonify({"error": str(e)}), 500
+
+@api.route("/reservations/create", methods=["POST"])
+@jwt_required()
+def create_reservation():
+  user_id = get_jwt_identity()
+  data = request.json['data']
+  db_cur = conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
+
+  try:
+    db_cur.execute("SELECT * FROM fields WHERE id = %s;", (data["fields_id"],))
+    field = db_cur.fetchone()
+
+    if not field:
+      db_cur.close()
+      return jsonify({"error": "Field not found"}), 404
+    else:
+      db_cur.execute("SELECT * FROM price WHERE id = %s;", (data["price_id"],))
+      price = db_cur.fetchone()
+
+      if not price:
+        db_cur.close()
+        return jsonify({"error": "Price not found"}), 404
+      else:
+        db_cur.execute("INSERT INTO reservation (client_id, fields_id, price_id, initial_time, end_time) VALUES (%s, %s, %s, %s, %s);", (user_id, data["fields_id"], data["price_id"], data["initial_time"], data["end_time"],))
+        conn.commit()
+        db_cur.close()
+        return jsonify({"message": "Reservation created"}), 201
+  except Exception as e:
+    conn.rollback()
+    db_cur.close()
+    return jsonify({"error": str(e)}), 500
+
+@api.route("/reservations", methods=["GET"])
+@jwt_required()
+def get_reservations():
+  user_id = get_jwt_identity()
+  db_cur = conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
+
+  try:
+    db_cur.execute("SELECT * FROM reservation WHERE client_id = %s;", (user_id,))
+    reservations = db_cur.fetchall()
+
+    formated_reservations = []
+    for reservation in reservations:
+      db_cur.execute("SELECT * FROM fields WHERE id = %s;", (reservation['fields_id'],))
+      field = db_cur.fetchone()
+
+      db_cur.execute("SELECT * FROM price WHERE id = %s;", (reservation['price_id'],))
+      price = db_cur.fetchone()
+
+      formated_reservations.append({"reservation_id": reservation['id'], "field": field['name'], "price": price['price_value'], "initial_time": reservation['initial_time'], "end_time": reservation['end_time']})
+    db_cur.close()
+    return jsonify(formated_reservations), 200
+  except Exception as e:
+    conn.rollback()
+    db_cur.close()
+    return jsonify({"error": str(e)}), 500
+
+@api.route("/reservations/date/<string:reservation_date>", methods=["GET"])
+@jwt_required()
+def get_reservations_by_day(reservation_date):
+  db_cur = conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
+
+  try:
+    print(reservation_date)
+    db_cur.execute("SELECT * FROM reservation WHERE TO_CHAR(initial_time, 'YYYY-MM-DD') LIKE %s;", (reservation_date+'%',))
+    reservations = db_cur.fetchall()
+    
+    formated_reservations = []
+    for reservation in reservations:
+      db_cur.execute("SELECT * FROM fields WHERE id = %s;", (reservation['fields_id'],))
+      field = db_cur.fetchone()
+
+      formated_reservations.append({"reservation_id": reservation['id'], "field_id": field['id'], "initial_time": reservation['initial_time'].strftime("%HH%M"), "date": reservation['initial_time'].strftime("%Y-%m-%d")})
+    db_cur.close()
+    return jsonify(formated_reservations), 200
+  except Exception as e:
+    conn.rollback()
+    db_cur.close()
+    return jsonify({"error": str(e)}), 500
+
+@api.route("/reservations/time/<string:initial_time>", methods=["GET"])
+@jwt_required()
+def get_reservations_by_time(initial_time):
+  db_cur = conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
+
+  try:
+    db_cur.execute("SELECT * FROM reservation WHERE TO_CHAR(initial_time, 'HH24:MI') LIKE %s;", (initial_time.replace("H", ":"),))
+    reservations = db_cur.fetchall()
+
+    formated_reservations = []
+    for reservation in reservations:
+      db_cur.execute("SELECT * FROM fields WHERE id = %s;", (reservation['fields_id'],))
+      field = db_cur.fetchone()
+
+      formated_reservations.append({"reservation_id": reservation['id'], "field": field['name'], "initial_time": reservation['initial_time'], "end_time": reservation['end_time']})
+    db_cur.close()
+    return jsonify(formated_reservations), 200
+  except Exception as e:
+    conn.rollback()
+    db_cur.close()
+    return jsonify({"error": str(e)}), 500
