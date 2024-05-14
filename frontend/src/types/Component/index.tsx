@@ -49,7 +49,7 @@ export type ToastType = {
 }
 
 export type DropdownOptionType = {
-  value: string,
+  value: number,
   image?: string | React.ReactNode,
   label: string,
   handle?: () => void

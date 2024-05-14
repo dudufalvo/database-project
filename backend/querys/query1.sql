@@ -29,7 +29,7 @@ CREATE TABLE reservation (
 );
 
 CREATE TABLE waitlist (
-	id		 BIGINT,
+	id		 BIGSERIAL,
 	interested_time TIMESTAMP,
 	silence	 BOOL,
 	client_id	 BIGINT NOT NULL,
@@ -46,7 +46,7 @@ CREATE TABLE manual_notification (
 );
 
 CREATE TABLE automatic_notification (
-	notification_id	 BIGINT,
+	notification_id	 BIGSERIAL,
 	notification_message	 VARCHAR(255),
 	notification_is_read	 BOOL,
 	notification_client_id BIGINT NOT NULL,
@@ -54,7 +54,7 @@ CREATE TABLE automatic_notification (
 );
 
 CREATE TABLE price (
-	id		 BIGINT,
+	id		 BIGSERIAL,
 	price_value NUMERIC(8,2),
 	start_time	 TIMESTAMP,
 	price_type	 VARCHAR(255),
@@ -63,7 +63,7 @@ CREATE TABLE price (
 );
 
 CREATE TABLE client_audit (
-	id		 BIGINT,
+	id		 BIGSERIAL,
 	field	 VARCHAR(255),
 	old_value	 VARCHAR(255),
 	change_date TIMESTAMP,
@@ -72,7 +72,7 @@ CREATE TABLE client_audit (
 );
 
 CREATE TABLE waitlist_audit (
-	id		 BIGINT,
+	id		 BIGSERIAL,
 	field	 VARCHAR(255),
 	old_value	 VARCHAR(255),
 	change_date TIMESTAMP,
@@ -81,7 +81,7 @@ CREATE TABLE waitlist_audit (
 );
 
 CREATE TABLE reservation_audit (
-	id		 BIGINT,
+	id		 BIGSERIAL,
 	field		 VARCHAR(255),
 	old_value	 VARCHAR(255),
 	change_date	 TIMESTAMP,
