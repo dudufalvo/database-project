@@ -108,7 +108,7 @@ const Prices = () => {
     }
     return a.is_active ? -1 : 1
   })
-  const dataOptions = data.filter((item) => item.is_active === true).map((item) => { return { value: item.price_id, label: item.price_type } })
+  const dataOptions = data.filter((item) => item.is_active === true).map((item) => { return { value: item.price_id.toString(), label: item.price_type } })
 
   useEffect(() => {
     axios.get(`${import.meta.env.VITE_API_BASE_URL}/prices`, { headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` } })
