@@ -1,0 +1,2 @@
+ALTER TABLE fields
+ALTER COLUMN available SET DEFAULT true;

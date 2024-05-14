@@ -16,6 +16,8 @@ import Notifications from 'pages/Notifications'
 import Reservations from 'pages/Reservations'
 import Messages from 'pages/Messages'
 import Statistics from 'pages/Statistics'
+import Fields from 'pages/Fields'
+import Prices from 'pages/Prices'
 
 const App = () => {
   return (
@@ -41,6 +43,8 @@ const App = () => {
             <Route path='/reservations' element={<Reservations />} />
             <Route path='/notifications' element={<Notifications />} />
             <Route path='/messages' element={<Messages />} />
+            <Route path='/fields' element={<Fields />} />
+            <Route path='/prices' element={<Prices />} />
             <Route path='/statistics' element={<Statistics />} />
             <Route path='/admin-panel' element={<AdminPanel />} />
             <Route path='/account' element={<Account />} />

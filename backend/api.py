@@ -281,8 +281,6 @@ def get_client():
     user = db_cur.fetchone()
 
     if user:
-      print("---------------------------------")
-      print(request.json)
       data = request.json['data']
       db_cur.execute("UPDATE client SET first_name = %s, last_name = %s, email = %s, phone_number = %s WHERE id = %s;", (data["first_name"], data["last_name"], data["email"], data["phone_number"], user_id,))
       conn.commit()
@@ -483,3 +481,142 @@ def update_manual_notification(notification_id):
     conn.rollback()
     db_cur.close()
     return jsonify({"error": str(e)}), 500
+
+@api.route("/fields/create", methods=["POST"])
+@jwt_required()
+@admin_required
+def create_field():
+  data = request.json['data']
+  db_cur = conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
+  
+  try:
+    db_cur.execute("INSERT INTO fields (name, available) VALUES (%s, %s);", (data["name"], data["available"],))
+    conn.commit()
+    db_cur.close()
+    return jsonify({"message": "Field created"}), 201
+  except Exception as e:
+    conn.rollback()
+    db_cur.close()
+    return jsonify({"error": str(e)}), 500
+
+@api.route("/fields", methods=["GET"])
+@jwt_required()
+def get_fields():
+  db_cur = conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
+
+  try:
+    db_cur.execute("SELECT * FROM fields;")
+    fields = db_cur.fetchall()
+
+    formated_fields = []
+    for field in fields:
+      formated_fields.append({"field_id": field['id'], "name": field['name'], "available": field['available']})
+    db_cur.close()
+    return jsonify(formated_fields), 200
+  except Exception as e:
+    conn.rollback()
+    db_cur.close()
+    return jsonify({"error": str(e)}), 500
+
+@api.route("/fields/<int:field_id>", methods=["GET"])
+@jwt_required()
+def get_field(field_id):
+  db_cur = conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
+  
+  try:
+    db_cur.execute("SELECT * FROM fields WHERE id = %s;", (field_id,))
+    field = db_cur.fetchone()
+
+    if field:
+      db_cur.close()
+      return jsonify({"field_id": field['id'], "name": field['name'], "available": field['available']}), 200
+    else:
+      db_cur.close()
+      return jsonify({"error": "Field not found"}), 404
+  except Exception as e:
+    conn.rollback()
+    db_cur.close()
+    return jsonify({"error": str(e)}), 500
+
+@api.route("/fields/<int:field_id>/update", methods=["PUT"])
+@jwt_required()
+@admin_required
+def update_field(field_id):
+  data = request.json['data']
+  db_cur = conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
+  
+  try:
+    db_cur.execute("SELECT * FROM fields WHERE id = %s;", (field_id,))
+    field = db_cur.fetchone()
+
+    if not field:
+      db_cur.close()
+      return jsonify({"error": "Field not found"}), 404
+    else:
+      db_cur.execute("UPDATE fields SET name = %s, available = %s WHERE id = %s;", (data["name"], data["available"], field_id,))
+      conn.commit()
+      db_cur.close()
+      return jsonify({"message": "Field updated"}), 200
+  except Exception as e:
+    conn.rollback()
+    db_cur.close()
+    return jsonify({"error": str(e)}), 500
+
+@api.route("/fields/<int:field_id>/delete", methods=["DELETE"])
+@jwt_required()
+@admin_required
+def delete_field(field_id):
+  db_cur = conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
+  
+  try:
+    db_cur.execute("SELECT * FROM fields WHERE id = %s;", (field_id,))
+    field = db_cur.fetchone()
+
+    if not field:
+      db_cur.close()
+      return jsonify({"error": "Field not found"}), 404
+    else:
+      db_cur.execute("DELETE FROM fields WHERE id = %s;", (field_id,))
+      conn.commit()
+      db_cur.close()
+      return jsonify({"message": "Field deleted"}), 200
+  except Exception as e:
+    conn.rollback()
+    db_cur.close()
+    return jsonify({"error": str(e)}), 500
+
+@api.route("/prices/create", methods=["POST"])
+@jwt_required()
+@admin_required
+def create_price():
+  data = request.json['data']
+  db_cur = conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
+  
+  try:
+    db_cur.execute("INSERT INTO price (price_value, price_type) VALUES (%s, %s);", (data["price_value"], data["price_type"],))
+    conn.commit()
+    db_cur.close()
+    return jsonify({"message": "Price created"}), 201
+  except Exception as e:
+    conn.rollback()
+    db_cur.close()
+    return jsonify({"error": str(e)}), 500
+
+@api.route("/prices", methods=["GET"])
+@jwt_required()
+def get_prices():
+  db_cur = conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
+
+  try:
+    db_cur.execute("SELECT * FROM price;")
+    prices = db_cur.fetchall()
+
+    formated_prices = []
+    for price in prices:
+      formated_prices.append({"price_id": price['id'], "price_value": price['price_value'], "price_type": price['price_type'], "start_time": price['start_time'], "is_active": price['is_active']})
+    db_cur.close()
+    return jsonify(formated_prices), 200
+  except Exception as e:
+    conn.rollback()
+    db_cur.close()
+    return jsonify({"error": str(e)}), 500  
