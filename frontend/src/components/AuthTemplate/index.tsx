@@ -56,7 +56,7 @@ const AuthTemplate = <T extends FormType>({ children, type, methods, handleAuth 
           <div className={styles.authContentContainer}>
             <div className={styles.authContentTop}>
               <h1>{type === 'sign-in' ? 'Welcome back!' : (type == 'sign-up' ? 'Welcome' : "Let's recover your password!")}</h1>
-              <h3>{type === 'sign-in' ? 'It\'s never been simpler to colect your soil data.' : 'Please enter your details.'}</h3>
+              <h3>{type === 'sign-in' ? 'It\'s never been simpler to schedule your padle games.' : 'Please enter your details.'}</h3>
             </div>
 
             <FormProvider {...methods}>
@@ -73,13 +73,6 @@ const AuthTemplate = <T extends FormType>({ children, type, methods, handleAuth 
                 ? <span>Don't have an account? <a href='/sign-up'>Sign Up</a></span>
                 : <span>Already have an account? <a href='/sign-in'>Sign In</a></span>}
             </div>
-            {(type != 'recover' && type != 'reset-password') && <Separator>OR</Separator>}
-            {(type != 'recover' && type != 'reset-password') &&
-              <Button handle={googleLogin} variant='google' fullWidth={true}>
-                <img src={google} alt='Google' />
-                {type.charAt(0).toUpperCase() + type.slice(1).replace('-', ' ')} with Google
-              </Button>
-            }
           </div>
         </div>
       </div>
