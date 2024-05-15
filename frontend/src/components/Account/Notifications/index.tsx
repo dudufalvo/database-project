@@ -43,8 +43,9 @@ type TableMessageType = {
 }
 
 type TableCheckboxType = {
+  type: 'automatic' | 'manual',
   notification_id: number,
-  sender_email: string,
+  sender_email?: string,
   is_read: boolean
 }
 
@@ -52,7 +53,7 @@ type ClientRequestType = {
   is_read: boolean
 }
 
-const TableCheckbox = ({ notification_id, sender_email, is_read }: TableCheckboxType) => {
+const TableCheckbox = ({ type, notification_id, sender_email, is_read }: TableCheckboxType) => {
   const { user } = useUser()
 
   const handleChange = () => {
@@ -60,13 +61,23 @@ const TableCheckbox = ({ notification_id, sender_email, is_read }: TableCheckbox
       is_read: !is_read
     }
 
-    axios.put(`${import.meta.env.VITE_API_BASE_URL}/manual-notification/${notification_id}/read`, { data } ,{ headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` } })
+    if (type == 'automatic') {
+      axios.put(`${import.meta.env.VITE_API_BASE_URL}/automatic-notification/${notification_id}/read`, { data } ,{ headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` } })
       .then(() => {
         toast.success('Notification read changed successfully');
       })
       .catch(() => {
         toast.error('Error changing notification read');
       })
+    } else if (type == 'manual') {
+      axios.put(`${import.meta.env.VITE_API_BASE_URL}/manual-notification/${notification_id}/read`, { data } ,{ headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` } })
+        .then(() => {
+          toast.success('Notification read changed successfully');
+        })
+        .catch(() => {
+          toast.error('Error changing notification read');
+        })
+    }
   }
 
   return (
@@ -76,6 +87,7 @@ const TableCheckbox = ({ notification_id, sender_email, is_read }: TableCheckbox
 
 const Notifications = () => {
   const [data, setData] = useState<TableMessageType[]>([]);
+  const [automaticData, setAutomaticData] = useState<TableMessageType[]>([]);
 
   useEffect(() => {
     axios.get(`${import.meta.env.VITE_API_BASE_URL}/manual-notification`, { headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` } })
@@ -83,6 +95,17 @@ const Notifications = () => {
       const data = response.data;
       console.log(data)
       setData(data);
+    }
+    )
+    .catch((error) => {
+      console.log(error);
+    });
+
+    axios.get(`${import.meta.env.VITE_API_BASE_URL}/automatic-notification`, { headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` } })
+    .then((response) => {
+      const data = response.data;
+      console.log(data)
+      setAutomaticData(data);
     }
     )
     .catch((error) => {
@@ -96,6 +119,29 @@ const Notifications = () => {
   return (
     <div className={styles.notifications}>
       <h2>Notifications</h2>
+
+      <TableContainer component={Paper}>
+        <Table sx={{ minWidth: 700 }} aria-label="customized table">
+          <TableHead>
+            <TableRow>
+              <StyledTableCell>Notification ID</StyledTableCell>
+              <StyledTableCell align="right">Message</StyledTableCell>
+              <StyledTableCell align="right">Read</StyledTableCell>
+            </TableRow>
+          </TableHead>
+          <TableBody>
+            {automaticData.map((row) => (
+              <StyledTableRow key={row.notification_id}>
+                <StyledTableCell component="th" scope="row">
+                  {row.notification_id}
+                </StyledTableCell>
+                <StyledTableCell align="right">{row.message}</StyledTableCell>
+                <StyledTableCell align="right">{<TableCheckbox type='automatic' notification_id={row.notification_id} is_read={row.is_read}/>}</StyledTableCell>
+              </StyledTableRow>
+            ))}
+          </TableBody>
+        </Table>
+      </TableContainer>
 
       <TableContainer component={Paper}>
         <Table sx={{ minWidth: 700 }} aria-label="customized table">
@@ -115,7 +161,7 @@ const Notifications = () => {
                 </StyledTableCell>
                 <StyledTableCell align="right">{row.receiver}</StyledTableCell>
                 <StyledTableCell align="right">{row.message}</StyledTableCell>
-                <StyledTableCell align="right">{<TableCheckbox notification_id={row.notification_id} sender_email={row.sender_email} is_read={row.is_read}/>}</StyledTableCell>
+                <StyledTableCell align="right">{<TableCheckbox type='manual' notification_id={row.notification_id} sender_email={row.sender_email} is_read={row.is_read}/>}</StyledTableCell>
               </StyledTableRow>
             ))}
           </TableBody>
