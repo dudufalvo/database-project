@@ -543,7 +543,7 @@ def get_field(field_id):
     conn.rollback()
     db_cur.close()
     return jsonify({"error": str(e)}), 500
-
+  
 @api.route("/fields/<int:field_id>/update", methods=["PUT"])
 @jwt_required()
 @admin_required
@@ -914,6 +914,34 @@ def get_fields_not_used(time):
     formated_fields = []
     for field in fields:
       formated_fields.append({"field_id": field['id'], "name": field['name']})
+    db_cur.close()
+    return jsonify(formated_fields), 200
+  except Exception as e:
+    conn.rollback()
+    db_cur.close()
+    return jsonify({"error": str(e)}), 500
+  
+@api.route("/statistics/fields-unused/<filter_type>/<filter>", methods=["GET"])
+@jwt_required()
+@admin_required
+def get_unused_fields(filter_type, filter):
+  if (filter == "null"):
+    return {}, 200
+
+  db_cur = conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
+
+  try:
+    if filter_type == "day":
+      db_cur.execute("SELECT fields.name FROM fields LEFT JOIN reservation ON fields.id = reservation.fields_id WHERE reservation.fields_id is null OR to_char(reservation.initial_time, 'YYYY-MM-DD') != %s;", (filter,))
+    elif filter_type == "month":
+      db_cur.execute("SELECT fields.name FROM fields LEFT JOIN reservation ON fields.id = reservation.fields_id WHERE reservation.fields_id is null OR to_char(reservation.initial_time, 'YYYY-MM') != %s;", (filter,))
+    elif filter_type == "year":
+      db_cur.execute("SELECT fields.name FROM fields LEFT JOIN reservation ON fields.id = reservation.fields_id WHERE reservation.fields_id is null OR to_char(reservation.initial_time, 'YYYY') != %s;", (filter,))
+    fields = db_cur.fetchall()
+
+    formated_fields = []
+    for field in fields:
+      formated_fields.append({"label":field['name']})
     db_cur.close()
     return jsonify(formated_fields), 200
   except Exception as e:
