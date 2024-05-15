@@ -73,6 +73,12 @@ type PricesType = {
   price_value: number
 }
 
+type WaitlistType = {
+  waitlist_id: number,
+  interested_time: string,
+  silence: boolean
+}
+
 const Reservations = () => {
   const [reservations, setReservations] = useState<ReservationsType[]>([])
   const [prices, setPrices] = useState<PricesType[]>([])
@@ -80,6 +86,7 @@ const Reservations = () => {
   const [selectedField, setSelectedField] = useState<DropdownOptionType | null>({ label: 'All', value: '0' });
   const [selectedDate, setSelectedDate] = useState<DropdownOptionType>({ label: new Date().toDateString(), value: new Date().toISOString().split('T')[0] });
   const [selectedTime, setSelectedTime] = useState<DropdownOptionType | null>({ label: 'All', value: '0' });
+  const [waitlist, setWaitlist] = useState<WaitlistType[]>([])
 
   const reservationsRows: TableMessageType[][] =  fields.map(field => {
     return prices.map(price => {
@@ -163,6 +170,29 @@ const Reservations = () => {
       })
   }
 
+  const handleCreateWaitlist = (values: any) => {
+    // create a timestamp with the values.date and values.initial_time like '2021-10-10 10:00:00'
+    const interested_time = `${values.date} ${values.initial_time.split('H').join(':')}:00`
+
+    const data = {
+      silence: false,
+      interested_time: interested_time
+    }
+
+    axios.post(`${import.meta.env.VITE_API_BASE_URL}/waitlist/create`, { data: data }, { headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` } })
+      .then(() => {
+        toast.success('Waitlist created successfully')
+        setTimeout(() => {
+          window.location.reload()
+        }
+        , 1000)
+      })
+      .catch((response) => {
+        console.log(response)
+        toast.error(response.response.data.error)
+      })
+  }
+
   useEffect(() => {
     axios.get(`${import.meta.env.VITE_API_BASE_URL}/reservations/date/${selectedDate?.value}`, { headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` } })
       .then(response => {
@@ -193,6 +223,16 @@ const Reservations = () => {
       })
   }
   , [selectedDate])
+
+  useEffect(() => {
+    axios.get(`${import.meta.env.VITE_API_BASE_URL}/waitlist`, { headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` } })
+      .then(response => {
+        setWaitlist(response.data)
+      })
+      .catch(() => {
+        toast.error('Failed to fetch waitlist')
+      })
+  }, [])
 
   return (
     <div className={styles.main}>
@@ -228,8 +268,7 @@ const Reservations = () => {
                     initial_time: row.initial_time,
                     date: selectedDate?.value
                   }
-                  
-                  console.log(reservations)
+
                   return (
                   <StyledTableRow key={row.price_id}>
                       <StyledTableCell component="th" scope="row">
@@ -243,7 +282,24 @@ const Reservations = () => {
                         <input type='checkbox' checked={reservations.map(reservation => reservation.field_id).includes(row.field_id) &&  reservations.map(reservation => reservation.initial_time).includes(row.initial_time) && reservations.map(reservation => reservation.date).includes(selectedDate.value)} disabled={reservations.map(reservation => reservation.field_id).includes(row.field_id) &&  reservations.map(reservation => reservation.initial_time).includes(row.initial_time) && reservations.map(reservation => reservation.date).includes(selectedDate.value)} onChange={() => handleCreateReservation(values)} />
                       </StyledTableCell>
                       <StyledTableCell align="right">
-                        <input type='checkbox' defaultChecked={false} disabled={false} />
+                        <input type='checkbox' checked={waitlist.map(waitlist => {
+                          // convert waitlist.interested_time to the format yyyy-mm-dd hh:mm:ss in two variables
+                          const [date, time] = new Date(waitlist.interested_time).toISOString().split('T')
+                          // convert the time to the format hhHmm
+                          const interested_time = time.split(':').slice(0, 2).join('H')
+                          // check if the waitlist is for the same field, initial_time and date
+                          console.log(interested_time, `${selectedDate.value} ${interested_time}`)
+                          return (date === selectedDate.value && interested_time === row.initial_time)
+                        }
+                        ).includes(true)} disabled={waitlist.map(waitlist => {
+                          // convert waitlist.interested_time to the format yyyy-mm-dd hh:mm:ss in two variables
+                          const [date, time] = new Date(waitlist.interested_time).toISOString().split('T')
+                          // convert the time to the format hhHmm
+                          const interested_time = time.split(':').slice(0, 2).join('H')
+                          // check if the waitlist is for the same field, initial_time and date
+                          return (date === selectedDate.value && interested_time === row.initial_time)
+                        }
+                        ).includes(true)} onChange={() => handleCreateWaitlist(values)} />
                       </StyledTableCell>
                     </StyledTableRow>
                 )})

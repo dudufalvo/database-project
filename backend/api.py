@@ -56,6 +56,8 @@ def get_user_role(user_id):
 def hello_world():
   return "<p>Hello, World!</p>"
 
+
+# clients
 @api.route("/client/register", methods=["POST"])
 def register_user():
   data = request.json['data']
@@ -381,6 +383,8 @@ def delete_client():
     db_cur.close()
     return jsonify({"error": str(e)}), 500
 
+
+# notifications
 @api.route("/manual-notification/create", methods=["POST"])
 @jwt_required()
 @admin_required
@@ -482,6 +486,8 @@ def update_manual_notification(notification_id):
     db_cur.close()
     return jsonify({"error": str(e)}), 500
 
+
+# fields
 @api.route("/fields/create", methods=["POST"])
 @jwt_required()
 @admin_required
@@ -585,6 +591,8 @@ def delete_field(field_id):
     db_cur.close()
     return jsonify({"error": str(e)}), 500
 
+
+# prices
 @api.route("/prices/create", methods=["POST"])
 @jwt_required()
 @admin_required
@@ -666,6 +674,8 @@ def get_active_prices_by_date(date):
     db_cur.close()
     return jsonify({"error": str(e)}), 500
 
+
+# reservations
 @api.route("/reservations/create", methods=["POST"])
 @jwt_required()
 def create_reservation():
@@ -730,7 +740,7 @@ def get_reservations_by_day(reservation_date):
 
   try:
     print(reservation_date)
-    db_cur.execute("SELECT * FROM reservation WHERE TO_CHAR(initial_time, 'YYYY-MM-DD') LIKE %s;", (reservation_date+'%',))
+    db_cur.execute("SELECT * FROM reservation WHERE cancelled = false and TO_CHAR(initial_time, 'YYYY-MM-DD') LIKE %s;", (reservation_date+'%',))
     reservations = db_cur.fetchall()
     
     formated_reservations = []
@@ -763,6 +773,220 @@ def get_reservations_by_time(initial_time):
       formated_reservations.append({"reservation_id": reservation['id'], "field": field['name'], "initial_time": reservation['initial_time'], "end_time": reservation['end_time']})
     db_cur.close()
     return jsonify(formated_reservations), 200
+  except Exception as e:
+    conn.rollback()
+    db_cur.close()
+    return jsonify({"error": str(e)}), 500
+
+@api.route("/reservations/future", methods=["GET"])
+@jwt_required()
+def get_client_future_reservations():
+  user_id = get_jwt_identity()
+  db_cur = conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
+
+  try:
+    db_cur.execute("SELECT * FROM reservation WHERE client_id = %s and initial_time > now() ORDER BY initial_time asc;", (user_id,))
+    reservations = db_cur.fetchall()
+
+    formated_reservations = []
+    for reservation in reservations:
+      db_cur.execute("SELECT * FROM fields WHERE id = %s;", (reservation['fields_id'],))
+      field = db_cur.fetchone()
+
+      db_cur.execute("SELECT * FROM price WHERE id = %s;", (reservation['price_id'],))
+      price = db_cur.fetchone()
+
+      formated_reservations.append({"reservation_id": reservation['id'], "field": field['name'], "price": price['price_value'], "date": reservation['initial_time'].strftime("%a, %d %b %Y"), "initial_time": reservation['initial_time'].strftime("%HH%M"), "end_time": reservation['end_time'].strftime("%HH%M"), "cancelled": reservation['cancelled']})
+    db_cur.close()
+    return jsonify(formated_reservations), 200
+  except Exception as e:
+    conn.rollback()
+    db_cur.close()
+    return jsonify({"error": str(e)}), 500
+
+@api.route("/reservations/past", methods=["GET"])
+@jwt_required()
+def get_client_past_reservations():
+  user_id = get_jwt_identity()
+  db_cur = conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
+
+  try:
+    db_cur.execute("SELECT * FROM reservation WHERE client_id = %s and initial_time < now() ORDER BY initial_time desc;", (user_id,))
+    reservations = db_cur.fetchall()
+
+    formated_reservations = []
+    for reservation in reservations:
+      db_cur.execute("SELECT * FROM fields WHERE id = %s;", (reservation['fields_id'],))
+      field = db_cur.fetchone()
+
+      db_cur.execute("SELECT * FROM price WHERE id = %s;", (reservation['price_id'],))
+      price = db_cur.fetchone()
+
+      formated_reservations.append({"reservation_id": reservation['id'], "field": field['name'], "price": price['price_value'], "date": reservation['initial_time'].strftime("%a, %d %b %Y"), "initial_time": reservation['initial_time'].strftime("%HH%M"), "end_time": reservation['end_time'].strftime("%HH%M"), "cancelled": reservation['cancelled']})
+    db_cur.close()
+    return jsonify(formated_reservations), 200
+  except Exception as e:
+    conn.rollback()
+    db_cur.close()
+    return jsonify({"error": str(e)}), 500
+
+@api.route("/reservations/<int:reservation_id>/cancel", methods=["PUT"])
+@jwt_required()
+def cancel_reservation(reservation_id):
+  user_id = get_jwt_identity()
+  data = request.json['data']
+  db_cur = conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
+
+  try:
+    db_cur.execute("SELECT * FROM reservation WHERE id = %s;", (reservation_id,))
+    reservation = db_cur.fetchone()
+
+    if not reservation:
+      db_cur.close()
+      return jsonify({"error": "Reservation not found"}), 404
+    else:
+      if user_id == reservation["client_id"]:
+        db_cur.execute("UPDATE reservation SET cancelled = %s WHERE id = %s;", (data["cancelled"], reservation_id,))
+        conn.commit()
+        db_cur.close()
+        return jsonify({"message": "Reservation updated"}), 200
+      else:
+        db_cur.close()
+        return jsonify({"error": "Unauthorized"}), 403
+  except Exception as e:
+    conn.rollback()
+    db_cur.close()
+    return jsonify({"error": str(e)}), 500
+
+
+# statistics
+@api.route("/statistics/frequent-field/<string:time>", methods=["GET"])
+def get_most_frequent_field(time):
+  db_cur = conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
+
+  try:
+    db_cur.execute("SELECT fields_id, COUNT(fields_id) as count FROM reservation WHERE initial_time > now() - interval %s GROUP BY fields_id ORDER BY count desc LIMIT 1;", (time,))
+    field = db_cur.fetchone()
+
+    if field:
+      db_cur.execute("SELECT * FROM fields WHERE id = %s;", (field['fields_id'],))
+      field_name = db_cur.fetchone()
+      db_cur.close()
+      return jsonify({"label": field_name['name'], "count": field['count']}), 200
+    else:
+      db_cur.close()
+      return jsonify({"error": "Field not found"}), 404
+  except Exception as e:
+    conn.rollback()
+    db_cur.close()
+    return jsonify({"error": str(e)}), 500
+
+@api.route("/statistics/frequent-time/<string:time>", methods=["GET"])
+def get_most_frequent_time(time):
+  db_cur = conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
+
+  try:
+    db_cur.execute("SELECT TO_CHAR(initial_time, 'HH24:MI') as time, COUNT(TO_CHAR(initial_time, 'HH24:MI')) as count FROM reservation WHERE initial_time > now() - interval %s GROUP BY TO_CHAR(initial_time, 'HH24:MI') ORDER BY count desc LIMIT 1;", (time,))
+    time = db_cur.fetchone()
+
+    if time:
+      db_cur.close()
+      # return time as like the time plus one hour and a half 16:00 -> 17:30
+      return jsonify({"label": time['time'] + " - " + (datetime.datetime.strptime(time['time'], "%H:%M") + datetime.timedelta(hours=1, minutes=30)).strftime("%H:%M"), "count": time['count']}), 200
+    else:
+      db_cur.close()
+      return jsonify({"error": "Time not found"}), 404
+  except Exception as e:
+    conn.rollback()
+    db_cur.close()
+    return jsonify({"error": str(e)}), 500
+
+@api.route("/statistics/fields-not-used/<string:time>", methods=["GET"])
+@jwt_required()
+@admin_required
+def get_fields_not_used(time):
+  db_cur = conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
+
+  try:
+    db_cur.execute("SELECT * FROM fields WHERE id NOT IN (SELECT fields_id FROM reservation WHERE initial_time > now() - interval %s);", (time,))
+    fields = db_cur.fetchall()
+
+    formated_fields = []
+    for field in fields:
+      formated_fields.append({"field_id": field['id'], "name": field['name']})
+    db_cur.close()
+    return jsonify(formated_fields), 200
+  except Exception as e:
+    conn.rollback()
+    db_cur.close()
+    return jsonify({"error": str(e)}), 500
+
+# waitlist
+@api.route("/waitlist/create", methods=["POST"])
+@jwt_required()
+def create_waitlist():
+  user_id = get_jwt_identity()
+  data = request.json['data']
+  db_cur = conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
+
+  try:
+    # first verifies if there is any available field in that date and time
+    db_cur.execute("SELECT * FROM fields WHERE id NOT IN (SELECT fields_id FROM reservation WHERE initial_time = %s);", (data["interested_time"],))
+    
+    # if there are no fields available, add the user to the waitlist
+    if not db_cur.fetchone():
+      db_cur.execute("INSERT INTO waitlist (client_id, interested_time, silence) VALUES (%s, %s, %s);", (user_id, data["interested_time"], False,))
+      conn.commit()
+      db_cur.close()
+      return jsonify({"message": "Added to waitlist"}), 201
+    else:
+      # if there are fields available, return an error message saying the name of the fields available
+      db_cur.execute("SELECT * FROM fields WHERE id NOT IN (SELECT fields_id FROM reservation WHERE initial_time = %s);", (data["interested_time"],))
+      fields = db_cur.fetchall()
+      
+      formated_fields = []
+      for field in fields:
+        formated_fields.append(field['name'])
+      db_cur.close()
+      return jsonify({"error": "Fields already available: " + ", ".join(formated_fields)}), 400
+  except Exception as e:
+    conn.rollback()
+    db_cur.close()
+    return jsonify({"error": str(e)}), 500
+
+@api.route("/waitlist/all", methods=["GET"])
+def get_waitlist():
+  db_cur = conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
+
+  try:
+    db_cur.execute("SELECT * FROM waitlist ;")
+    waitlist = db_cur.fetchall()
+
+    formated_waitlist = []
+    for wait in waitlist:
+      formated_waitlist.append({"waitlist_id": wait['id'], "interested_time": wait['interested_time'], "silence": wait['silence']})
+    db_cur.close()
+    return jsonify(formated_waitlist), 200
+  except Exception as e:
+    conn.rollback()
+    db_cur.close()
+    return jsonify({"error": str(e)}), 500
+
+@api.route("/waitlist", methods=["GET"])
+@jwt_required()
+def get_clients_waitlist():
+  user_id = get_jwt_identity()
+  db_cur = conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
+
+  try:
+    db_cur.execute("SELECT * FROM waitlist WHERE client_id = %s;", (user_id,))
+    waitlist = db_cur.fetchall()
+
+    formated_waitlist = []
+    for wait in waitlist:
+      formated_waitlist.append({"waitlist_id": wait['id'], "interested_time": wait['interested_time'], "silence": wait['silence']})
+    db_cur.close()
+    return jsonify(formated_waitlist), 200
   except Exception as e:
     conn.rollback()
     db_cur.close()
