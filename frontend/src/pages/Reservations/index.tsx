@@ -279,7 +279,17 @@ const Reservations = () => {
                       <StyledTableCell align="right">{row.end_time}</StyledTableCell>
                       <StyledTableCell align="right">{row.price_value}</StyledTableCell>
                       <StyledTableCell align="right">
-                        <input type='checkbox' checked={reservations.map(reservation => reservation.field_id).includes(row.field_id) &&  reservations.map(reservation => reservation.initial_time).includes(row.initial_time) && reservations.map(reservation => reservation.date).includes(selectedDate.value)} disabled={reservations.map(reservation => reservation.field_id).includes(row.field_id) &&  reservations.map(reservation => reservation.initial_time).includes(row.initial_time) && reservations.map(reservation => reservation.date).includes(selectedDate.value)} onChange={() => handleCreateReservation(values)} />
+                        <input type='checkbox' checked={
+                          reservations.length ? reservations.map(reservation => {
+                            return (reservation.field_id === row.field_id && reservation.initial_time === row.initial_time && reservation.date === selectedDate.value)
+                          }
+                          ).includes(true) : false} disabled={
+                          reservations.length ? reservations.map(reservation => {
+                            return (reservation.field_id === row.field_id && reservation.initial_time === row.initial_time && reservation.date === selectedDate.value)
+                          }
+                          ).includes(true) : false}
+                          
+                          onChange={() => handleCreateReservation(values)} />
                       </StyledTableCell>
                       <StyledTableCell align="right">
                         <input type='checkbox' checked={waitlist.map(waitlist => {
