@@ -861,6 +861,8 @@ def cancel_reservation(reservation_id):
 
 # statistics
 @api.route("/statistics/frequent-field/<string:time>", methods=["GET"])
+@jwt_required()
+@admin_required
 def get_most_frequent_field(time):
   db_cur = conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
 
@@ -882,6 +884,8 @@ def get_most_frequent_field(time):
     return jsonify({"error": str(e)}), 500
 
 @api.route("/statistics/frequent-time/<string:time>", methods=["GET"])
+@jwt_required()
+@admin_required
 def get_most_frequent_time(time):
   db_cur = conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
 
@@ -925,9 +929,6 @@ def get_fields_not_used(time):
 @jwt_required()
 @admin_required
 def get_unused_fields(filter_type, filter):
-  if (filter == "null"):
-    return {}, 200
-
   db_cur = conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
 
   try:
@@ -948,6 +949,36 @@ def get_unused_fields(filter_type, filter):
     conn.rollback()
     db_cur.close()
     return jsonify({"error": str(e)}), 500
+  
+@api.route("/statistics/time-unused/<filter_type>/<filter>", methods=["GET"])
+@jwt_required()
+@admin_required
+def get_unused_time(filter_type, filter):
+  db_cur = conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
+
+  try:
+    if filter_type == "day":
+      db_cur.execute("SELECT price.price_type FROM price LEFT JOIN reservation ON price.id = reservation.price_id WHERE ( reservation.price_id is null OR to_char(reservation.initial_time, 'YYYY-MM-DD') != %s ) AND price.is_active is TRUE ", (filter,))
+    elif filter_type == "month":
+      db_cur.execute("SELECT price.price_type FROM price LEFT JOIN reservation ON price.id = reservation.price_id WHERE ( reservation.price_id is null OR to_char(reservation.initial_time, 'YYYY-MM') != %s ) AND price.is_active is TRUE ", (filter,))
+    elif filter_type == "year":
+      db_cur.execute("SELECT price.price_type FROM price LEFT JOIN reservation ON price.id = reservation.price_id WHERE ( reservation.price_id is null OR to_char(reservation.initial_time, 'YYYY') != %s ) AND price.is_active is TRUE ", (filter,))
+    prices = db_cur.fetchall()
+
+    formated_fields = []
+    for price in prices:
+      formated_fields.append({"label":price['price_type']})
+    db_cur.close()
+    return jsonify(formated_fields), 200
+  except Exception as e:
+    conn.rollback()
+    db_cur.close()
+    print(e)
+    return jsonify({"error": str(e)}), 500
+  
+
+
+# db_cur.execute("SELECT to_char(reservation.initial_time, 'HH24:MI') as time FROM reservation WHERE ( reservation.fields_id is null OR to_char(reservation.initial_time, 'YYYY-MM-DD') != %s ) GROUP BY to_char(reservation.initial_time, 'HH24:MI');", (filter,))
 
 # waitlist
 @api.route("/waitlist/create", methods=["POST"])

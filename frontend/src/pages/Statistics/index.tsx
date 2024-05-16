@@ -13,6 +13,7 @@ import { ChangeEvent, useEffect, useState } from 'react'
 import SelectDropdown from 'components/SelectDropdown';
 import { DropdownOptionType } from 'types/Component';
 import { SingleValue, MultiValue } from 'react-select';
+import { set } from 'react-hook-form';
 
 const StyledTableCell = styled(TableCell)(({ theme }) => ({
   [`&.${tableCellClasses.head}`]: {
@@ -52,8 +53,8 @@ const Statistics = () => {
   const [selectedFilterType, setSelectedFilterType] = useState<string>('day')
   const [selectedFilter, setSelectedFilter] = useState<string>('null')
   const [unusedFields, setUnusedFields] = useState<TableSimpleType[]>([]);
+  const [unusedTimes, setUnusedTimes] = useState<TableSimpleType[]>([]);
 
-  console.log(selectedTimePeriod)
 
   const handleSelectedOption = (value: SingleValue<DropdownOptionType> | MultiValue<DropdownOptionType>) => {
     if (!value) return
@@ -94,9 +95,8 @@ const Statistics = () => {
   }
 
   useEffect(() => {
-    axios.get(`${import.meta.env.VITE_API_BASE_URL}/statistics/frequent-field/${selectedTimePeriod}`)
+    axios.get(`${import.meta.env.VITE_API_BASE_URL}/statistics/frequent-field/${selectedTimePeriod}`, { headers: { Authorization: `Bearer ${localStorage.getItem('token')}` } })
       .then((response) => {
-        console.log(response.data)
         setReservedField([response.data])
         toast.success('Fetched reserved field statistics')
       })
@@ -104,7 +104,7 @@ const Statistics = () => {
         toast.error('Error fetching reserved field statistics')
       })
 
-    axios.get(`${import.meta.env.VITE_API_BASE_URL}/statistics/frequent-time/${selectedTimePeriod}`)
+    axios.get(`${import.meta.env.VITE_API_BASE_URL}/statistics/frequent-time/${selectedTimePeriod}`, { headers: { Authorization: `Bearer ${localStorage.getItem('token')}` } })
       .then((response) => {
         setReservedTime([response.data])
       })
@@ -115,9 +115,10 @@ const Statistics = () => {
   , [selectedTimePeriod])
 
   useEffect(() => {
-    axios.get(`${import.meta.env.VITE_API_BASE_URL}/fields/unused/${selectedFilterType}/${selectedFilter}`)
+    if (selectedFilter === 'null') return
+
+    axios.get(`${import.meta.env.VITE_API_BASE_URL}/statistics/fields-unused/${selectedFilterType}/${selectedFilter}`, { headers: { Authorization: `Bearer ${localStorage.getItem('token')}` } })
     .then((response) => {
-      console.log(response.data)
       setUnusedFields(response.data)
       toast.success('Fetched reserved field statistics')
     })
@@ -125,7 +126,15 @@ const Statistics = () => {
       toast.error('Error fetching reserved field statistics')
     })
 
+    axios.get(`${import.meta.env.VITE_API_BASE_URL}/statistics/time-unused/${selectedFilterType}/${selectedFilter}`, { headers: { Authorization: `Bearer ${localStorage.getItem('token')}` } })
+    .then((response) => {
+      setUnusedTimes(response.data)
+    })
+    .catch(() => {
+      toast.error('Error fetching reserved field statistics')
+    })
   }, [selectedFilter])
+
   
   return (
     <div className={styles.main}>
@@ -225,6 +234,27 @@ const Statistics = () => {
                         </TableHead>
                         <TableBody>
                           {unusedFields.map((row) => (
+                            <StyledTableRow key={row.label}>
+                              <StyledTableCell align="left">{row.label}</StyledTableCell>
+                            </StyledTableRow>
+                          ))}
+                        </TableBody>
+                      </Table>
+                    </TableContainer>
+          }
+        </div>
+        <div>
+          <span>Unused Times</span>
+          { unusedTimes.length >= 0 &&
+                      <TableContainer component={Paper}>
+                      <Table sx={{ minWidth: 700 }} aria-label="customized table">
+                        <TableHead>
+                          <TableRow>
+                            <StyledTableCell>Times</StyledTableCell>
+                          </TableRow>
+                        </TableHead>
+                        <TableBody>
+                          {unusedTimes.map((row) => (
                             <StyledTableRow key={row.label}>
                               <StyledTableCell align="left">{row.label}</StyledTableCell>
                             </StyledTableRow>
