@@ -1110,10 +1110,33 @@ def get_unused_time(filter_type, filter):
     db_cur.close()
     print(e)
     return jsonify({"error": str(e)}), 500
-  
 
+@api.route("/statistics/reservations-audit/<filter_type>/<filter>", methods=["GET"])
+@jwt_required()
+@admin_required
+def get_reservations_audit(filter_type, filter):
+  db_cur = conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
 
-# db_cur.execute("SELECT to_char(reservation.initial_time, 'HH24:MI') as time FROM reservation WHERE ( reservation.fields_id is null OR to_char(reservation.initial_time, 'YYYY-MM-DD') != %s ) GROUP BY to_char(reservation.initial_time, 'HH24:MI');", (filter,))
+  try:
+    if filter_type == "day":
+      db_cur.execute("SELECT * FROM reservation_audit WHERE to_char(change_date, 'YYYY-MM-DD') = %s ORDER BY change_date asc;", (filter,))
+    elif filter_type == "month":
+      db_cur.execute("SELECT * FROM reservation_audit WHERE to_char(change_date, 'YYYY-MM') = %s ORDER BY change_date asc;", (filter,))
+    elif filter_type == "year":
+      db_cur.execute("SELECT * FROM reservation_audit WHERE to_char(change_date, 'YYYY') = %s ORDER BY change_date asc;", (filter,))
+    reservations_audit = db_cur.fetchall()
+    
+    formated_reservations_audit = []
+    for reservation_audit in reservations_audit:
+      formated_reservations_audit.append({"id": reservation_audit['id'], "field": reservation_audit['field'], "old_value": reservation_audit['old_value'], "new_value": reservation_audit['new_value'], "change_date": reservation_audit['change_date'], "reservation_id": reservation_audit['reservation_id']})
+    db_cur.close()
+    return jsonify(formated_reservations_audit), 200
+  except Exception as e:
+    print(e)
+    conn.rollback()
+    db_cur.close()
+    return jsonify({"error": str(e)}), 500
+
 
 # waitlist
 @api.route("/waitlist/create", methods=["POST"])
