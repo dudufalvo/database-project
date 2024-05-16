@@ -18,6 +18,6 @@ END;
 $$ LANGUAGE plpgsql;
 
 CREATE TRIGGER create_automatic_notification_to_client_registered_in_waitlist_trigger
-AFTER UPDATE ON reservations
+AFTER UPDATE ON reservation
 FOR EACH ROW
 EXECUTE FUNCTION create_automatic_notification_to_client_registered_in_waitlist();
