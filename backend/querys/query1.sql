@@ -84,6 +84,7 @@ CREATE TABLE reservation_audit (
 	id		 BIGSERIAL,
 	field		 VARCHAR(255),
 	old_value	 VARCHAR(255),
+	new_value	 VARCHAR(255),
 	change_date	 TIMESTAMP,
 	reservation_id BIGINT NOT NULL,
 	PRIMARY KEY(id)
