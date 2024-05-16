@@ -493,7 +493,7 @@ def get_automatic_notifications():
   db_cur = conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
   
   try:
-    db_cur.execute("SELECT * FROM automatic_notification WHERE notification_client_id = %s;", (user_id,))
+    db_cur.execute("SELECT * FROM automatic_notification WHERE notification_client_id = %s ORDER BY notification_id desc;", (user_id,))
     notifications = db_cur.fetchall()
 
     formated_notifications = []
@@ -852,6 +852,35 @@ def get_client_future_reservations():
     db_cur.close()
     return jsonify({"error": str(e)}), 500
 
+@api.route("/reservations/future/all", methods=["GET"])
+@jwt_required()
+@admin_required
+def get_all_future_reservations():
+  db_cur = conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
+
+  try:
+    db_cur.execute("SELECT * FROM reservation ORDER BY initial_time desc;")
+    reservations = db_cur.fetchall()
+
+    formated_reservations = []
+    for reservation in reservations:
+      db_cur.execute("SELECT * FROM fields WHERE id = %s;", (reservation['fields_id'],))
+      field = db_cur.fetchone()
+
+      db_cur.execute("SELECT * FROM price WHERE id = %s;", (reservation['price_id'],))
+      price = db_cur.fetchone()
+
+      db_cur.execute("SELECT * FROM client WHERE id = %s;", (reservation['client_id'],))
+      client = db_cur.fetchone()
+
+      formated_reservations.append({"reservation_id": reservation['id'], "field": field['name'], "price": price['price_value'], "date": reservation['initial_time'].strftime("%a, %d %b %Y"), "initial_time": reservation['initial_time'].strftime("%HH%M"), "end_time": reservation['end_time'].strftime("%HH%M"), "client": client['email'], "cancelled": reservation['cancelled']})
+    db_cur.close()
+    return jsonify(formated_reservations), 200
+  except Exception as e:
+    conn.rollback()
+    db_cur.close()
+    return jsonify({"error": str(e)}), 500
+
 @api.route("/reservations/past", methods=["GET"])
 @jwt_required()
 def get_client_past_reservations():
@@ -893,7 +922,11 @@ def cancel_reservation(reservation_id):
       db_cur.close()
       return jsonify({"error": "Reservation not found"}), 404
     else:
-      if user_id == reservation["client_id"]:
+      # if the user is the client of the reservation or an admin
+      db_cur.execute("SELECT * FROM client WHERE id = %s;", (user_id,))
+      user = db_cur.fetchone()
+
+      if user_id == reservation["client_id"] or user["role"] == "admin" or user["role"] == "superadmin":
         db_cur.execute("UPDATE reservation SET cancelled = %s WHERE id = %s;", (data["cancelled"], reservation_id,))
         conn.commit()
         db_cur.close()
@@ -901,6 +934,60 @@ def cancel_reservation(reservation_id):
       else:
         db_cur.close()
         return jsonify({"error": "Unauthorized"}), 403
+  except Exception as e:
+    conn.rollback()
+    db_cur.close()
+    return jsonify({"error": str(e)}), 500
+
+@api.route("/reservations/<int:reservation_id>/update", methods=["PUT"])
+@jwt_required()
+@admin_required
+def update_reservation(reservation_id):
+  data = request.json['data']
+  db_cur = conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
+
+  try:
+    db_cur.execute("SELECT * FROM reservation WHERE id = %s;", (reservation_id,))
+    reservation = db_cur.fetchone()
+
+    if not reservation:
+      db_cur.close()
+      return jsonify({"error": "Reservation not found"}), 404
+    else:
+      date = data["date"]
+      time = data["time"].replace(":", "H")
+      
+      # verifie if the date is a weekday or weekend
+      date_obj = datetime.datetime.strptime(date, "%Y-%m-%d")
+      if date_obj.weekday() < 5:
+        price_type = "SEMANA"
+      else:
+        price_type = "FIM_SEMANA"
+      
+      # get the price id for the date and time
+      db_cur.execute("SELECT * FROM price WHERE price_type LIKE %s;", (price_type+'_'+time+'%',))
+      price = db_cur.fetchone()
+
+      time = time.replace("H", ":") + ":00"
+      timestamp = datetime.datetime.strptime(date + " " + time, "%Y-%m-%d %H:%M:%S")
+
+      # verify if there is any field available for that date and time
+      db_cur.execute("SELECT * FROM fields WHERE id NOT IN (SELECT fields_id FROM reservation WHERE initial_time = %s);", (timestamp,))
+      field = db_cur.fetchone()
+      
+      if not field:
+        db_cur.close()
+        return jsonify({"error": "No field available"}), 400
+      else:
+        # get client id of reservation
+        db_cur.execute("SELECT * FROM reservation WHERE id = %s;", (reservation_id,))
+        reservation = db_cur.fetchone()
+        
+        # update reservation
+        db_cur.execute("UPDATE reservation SET fields_id = %s, price_id = %s, initial_time = %s, end_time = %s, client_id = %s WHERE id = %s;", (field['id'], price['id'], timestamp, timestamp + datetime.timedelta(hours=1, minutes=30), reservation['client_id'], reservation_id,))
+        conn.commit()
+        db_cur.close()
+        return jsonify({"message": "Reservation updated"}), 200
   except Exception as e:
     conn.rollback()
     db_cur.close()
@@ -1091,7 +1178,7 @@ def get_clients_waitlist():
   db_cur = conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
 
   try:
-    db_cur.execute("SELECT * FROM waitlist WHERE client_id = %s;", (user_id,))
+    db_cur.execute("SELECT * FROM waitlist WHERE client_id = %s and silence = false;", (user_id,))
     waitlist = db_cur.fetchall()
 
     formated_waitlist = []
