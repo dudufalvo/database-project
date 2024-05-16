@@ -56,7 +56,8 @@ const TableCheckbox = ({ reservation_id, cancelled }: TableCheckboxType) => {
       .then(() => {
         toast.success('Reservation cancelled successfully');
       })
-      .catch(() => {
+      .catch((response) => {
+        console.log(response)
         toast.error('Error cancelling reservation');
       })
   }

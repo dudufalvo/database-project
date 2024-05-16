@@ -486,6 +486,54 @@ def update_manual_notification(notification_id):
     db_cur.close()
     return jsonify({"error": str(e)}), 500
 
+@api.route("/automatic-notification", methods=["GET"])
+@jwt_required()
+def get_automatic_notifications():
+  user_id = get_jwt_identity()
+  db_cur = conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
+  
+  try:
+    db_cur.execute("SELECT * FROM automatic_notification WHERE notification_client_id = %s;", (user_id,))
+    notifications = db_cur.fetchall()
+
+    formated_notifications = []
+    for notification in notifications:
+      formated_notifications.append({"notification_id": notification['notification_id'], "message": notification['notification_message'], "is_read": notification['notification_is_read']})
+    db_cur.close()
+    return jsonify(formated_notifications), 200
+  except Exception as e:
+    conn.rollback()
+    db_cur.close()
+    return jsonify({"error": str(e)}), 500
+
+@api.route("/automatic-notification/<int:notification_id>/read", methods=["PUT"])
+@jwt_required()
+def update_automatic_notification(notification_id):
+  user_id = get_jwt_identity()
+  data = request.json['data']
+  db_cur = conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
+  
+  try:
+    db_cur.execute("SELECT * FROM automatic_notification WHERE notification_id = %s;", (notification_id,))
+    notification = db_cur.fetchone()
+
+    if not notification:
+      db_cur.close()
+      return jsonify({"error": "Notification not found"}), 404
+    else:
+      if user_id == notification["notification_client_id"]:
+        db_cur.execute("UPDATE automatic_notification SET notification_is_read = %s WHERE notification_id = %s;", (data["is_read"], notification_id,))
+        conn.commit()
+        db_cur.close()
+        return jsonify({"message": "Notification updated"}), 200
+      else:
+        db_cur.close()
+        return jsonify({"error": "Unauthorized"}), 403
+  except Exception as e:
+    conn.rollback()
+    db_cur.close()
+    return jsonify({"error": str(e)}), 500
+
 
 # fields
 @api.route("/fields/create", methods=["POST"])
@@ -1014,16 +1062,21 @@ def create_waitlist():
     return jsonify({"error": str(e)}), 500
 
 @api.route("/waitlist/all", methods=["GET"])
+@jwt_required()
 def get_waitlist():
   db_cur = conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
 
   try:
-    db_cur.execute("SELECT * FROM waitlist ;")
+    db_cur.execute("SELECT * FROM waitlist ORDER BY interested_time desc;")
     waitlist = db_cur.fetchall()
 
     formated_waitlist = []
     for wait in waitlist:
-      formated_waitlist.append({"waitlist_id": wait['id'], "interested_time": wait['interested_time'], "silence": wait['silence']})
+      db_cur.execute("SELECT * FROM client WHERE id = %s;", (wait['client_id'],))
+      client = db_cur.fetchone()
+      
+      
+      formated_waitlist.append({"waitlist_id": wait['id'], "date": wait['interested_time'].strftime("%a, %d %b %Y"), "time": wait['interested_time'].strftime("%HH%M") + " - " + (wait['interested_time'] + datetime.timedelta(hours=1, minutes=30)).strftime("%HH%M"), "silence": wait['silence'], "client": client['email']})
     db_cur.close()
     return jsonify(formated_waitlist), 200
   except Exception as e:

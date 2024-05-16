@@ -44,7 +44,13 @@ type TableSimpleType = {
   label: string
 }
 
-
+type WaitlistType = {
+  waitlist_id: number,
+  date: string,
+  time: string,
+  silence: number,
+  client: string
+}
 
 const Statistics = () => {
   const [reservedField, setReservedField] = useState<TableType[]>([])
@@ -54,7 +60,7 @@ const Statistics = () => {
   const [selectedFilter, setSelectedFilter] = useState<string>('null')
   const [unusedFields, setUnusedFields] = useState<TableSimpleType[]>([]);
   const [unusedTimes, setUnusedTimes] = useState<TableSimpleType[]>([]);
-
+  const [waitlist, setWaitlist] = useState<WaitlistType[]>([])
 
   const handleSelectedOption = (value: SingleValue<DropdownOptionType> | MultiValue<DropdownOptionType>) => {
     if (!value) return
@@ -100,16 +106,24 @@ const Statistics = () => {
         setReservedField([response.data])
         toast.success('Fetched reserved field statistics')
       })
-      .catch(() => {
-        toast.error('Error fetching reserved field statistics')
+      .catch(err => {
+        toast.error(err.response.data.message)
       })
 
     axios.get(`${import.meta.env.VITE_API_BASE_URL}/statistics/frequent-time/${selectedTimePeriod}`, { headers: { Authorization: `Bearer ${localStorage.getItem('token')}` } })
       .then((response) => {
         setReservedTime([response.data])
       })
-      .catch(() => {
-        toast.error('Error fetching reserved time statistics')
+      .catch(err => {
+        toast.error(err.response.data.message)
+      })
+
+    axios.get(`${import.meta.env.VITE_API_BASE_URL}/waitlist/all`, { headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` } })
+      .then(res => {
+        setWaitlist(res.data)
+      })
+      .catch(err => {
+        toast.error(err.response.data.message)
       })
   }
   , [selectedTimePeriod])
@@ -152,7 +166,7 @@ const Statistics = () => {
                 </TableRow>
               </TableHead>
               <TableBody>
-                {reservedField.map((row) => (
+                {reservedField?.map((row) => (
                   <StyledTableRow key={row.count}>
                     <StyledTableCell component="th" scope="row">
                       {row.count}
@@ -176,7 +190,7 @@ const Statistics = () => {
                 </TableRow>
               </TableHead>
               <TableBody>
-                {reservedTime.map((row) => (
+                {reservedTime?.map((row) => (
                   <StyledTableRow key={row.count}>
                     <StyledTableCell component="th" scope="row">
                       {row.count}
@@ -195,17 +209,19 @@ const Statistics = () => {
             <Table sx={{ minWidth: 700 }} aria-label="customized table">
               <TableHead>
                 <TableRow>
-                  <StyledTableCell>Count</StyledTableCell>
+                  <StyledTableCell>Date</StyledTableCell>
                   <StyledTableCell align="right">Time</StyledTableCell>
+                  <StyledTableCell align="right">Client</StyledTableCell>
                 </TableRow>
               </TableHead>
               <TableBody>
-                {reservedTime.map((row) => (
-                  <StyledTableRow key={row.count}>
+                {waitlist?.map((row) => (
+                  <StyledTableRow key={row.waitlist_id}>
                     <StyledTableCell component="th" scope="row">
-                      {row.count}
+                      {row.date}
                     </StyledTableCell>
-                    <StyledTableCell align="right">{row.label}</StyledTableCell>
+                    <StyledTableCell align="right">{row.time}</StyledTableCell>
+                    <StyledTableCell align="right">{row.client}</StyledTableCell>
                   </StyledTableRow>
                 ))}
               </TableBody>
