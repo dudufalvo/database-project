@@ -45,11 +45,8 @@ type TableSimpleType = {
 }
 
 type WaitlistType = {
-  waitlist_id: number,
-  date: string,
-  time: string,
-  silence: number,
-  client: string
+  counter: number,
+  datetime: string,
 }
 
 type ReservationAuditType = {
@@ -128,15 +125,15 @@ const Statistics = () => {
         toast.error(err.response.data.message)
       })
 
-    axios.get(`${import.meta.env.VITE_API_BASE_URL}/waitlist/all`, { headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` } })
+    axios.get(`${import.meta.env.VITE_API_BASE_URL}/statistics/waitlist/more-requests`, { headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` } })
       .then(res => {
         setWaitlist(res.data)
       })
       .catch(err => {
         toast.error(err.response.data.message)
       })
-  }
-  , [selectedTimePeriod])
+
+  }, [selectedTimePeriod])
 
   useEffect(() => {
     if (selectedFilter === 'null') return
@@ -227,19 +224,15 @@ const Statistics = () => {
             <Table sx={{ minWidth: 700 }} aria-label="customized table">
               <TableHead>
                 <TableRow>
-                  <StyledTableCell>Date</StyledTableCell>
-                  <StyledTableCell align="right">Time</StyledTableCell>
-                  <StyledTableCell align="right">Client</StyledTableCell>
+                  <StyledTableCell align="left">Count</StyledTableCell>
+                  <StyledTableCell align="right">Day & Hour</StyledTableCell>
                 </TableRow>
               </TableHead>
               <TableBody>
-                {waitlist?.map((row) => (
-                  <StyledTableRow key={row.waitlist_id}>
-                    <StyledTableCell component="th" scope="row">
-                      {row.date}
-                    </StyledTableCell>
-                    <StyledTableCell align="right">{row.time}</StyledTableCell>
-                    <StyledTableCell align="right">{row.client}</StyledTableCell>
+                {waitlist?.map((row, index) => (
+                  <StyledTableRow key={index}>
+                    <StyledTableCell align="left">{row.counter}</StyledTableCell>
+                    <StyledTableCell align="right">{row.datetime}</StyledTableCell>
                   </StyledTableRow>
                 ))}
               </TableBody>
