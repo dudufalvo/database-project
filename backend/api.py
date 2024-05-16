@@ -981,11 +981,35 @@ def get_unused_fields(filter_type, filter):
 
   try:
     if filter_type == "day":
-      db_cur.execute("SELECT fields.name FROM fields LEFT JOIN reservation ON fields.id = reservation.fields_id WHERE reservation.fields_id is null OR to_char(reservation.initial_time, 'YYYY-MM-DD') != %s;", (filter,))
+      db_cur.execute("""
+        SELECT * FROM fields
+        WHERE fields.name NOT IN (
+          SELECT fields.name FROM fields
+          RIGHT JOIN reservation ON reservation.fields_id = fields.id
+          WHERE to_char(reservation.initial_time, 'YYYY-MM-DD') = %s
+          GROUP BY fields.name
+        );
+      """, (filter,))
     elif filter_type == "month":
-      db_cur.execute("SELECT fields.name FROM fields LEFT JOIN reservation ON fields.id = reservation.fields_id WHERE reservation.fields_id is null OR to_char(reservation.initial_time, 'YYYY-MM') != %s;", (filter,))
+      db_cur.execute("""
+        SELECT * FROM fields
+        WHERE fields.name NOT IN (
+          SELECT fields.name FROM fields
+          RIGHT JOIN reservation ON reservation.fields_id = fields.id
+          WHERE to_char(reservation.initial_time, 'YYYY-MM') = %s
+          GROUP BY fields.name
+        );
+      """, (filter,))
     elif filter_type == "year":
-      db_cur.execute("SELECT fields.name FROM fields LEFT JOIN reservation ON fields.id = reservation.fields_id WHERE reservation.fields_id is null OR to_char(reservation.initial_time, 'YYYY') != %s;", (filter,))
+      db_cur.execute("""
+        SELECT * FROM fields
+        WHERE fields.name NOT IN (
+          SELECT fields.name FROM fields
+          RIGHT JOIN reservation ON reservation.fields_id = fields.id
+          WHERE to_char(reservation.initial_time, 'YYYY') = %s
+          GROUP BY fields.name
+        );
+      """, (filter,))
     fields = db_cur.fetchall()
 
     formated_fields = []
@@ -996,6 +1020,7 @@ def get_unused_fields(filter_type, filter):
   except Exception as e:
     conn.rollback()
     db_cur.close()
+    print(e)
     return jsonify({"error": str(e)}), 500
   
 @api.route("/statistics/time-unused/<filter_type>/<filter>", methods=["GET"])
@@ -1006,11 +1031,35 @@ def get_unused_time(filter_type, filter):
 
   try:
     if filter_type == "day":
-      db_cur.execute("SELECT price.price_type FROM price LEFT JOIN reservation ON price.id = reservation.price_id WHERE ( reservation.price_id is null OR to_char(reservation.initial_time, 'YYYY-MM-DD') != %s ) AND price.is_active is TRUE ", (filter,))
+      db_cur.execute("""
+        SELECT * FROM price
+        WHERE price.price_type NOT IN (
+          SELECT price.price_type FROM price
+          RIGHT JOIN reservation ON reservation.price_id = price.id
+          WHERE to_char(reservation.initial_time, 'YYYY-MM-DD') = %s
+          GROUP BY price.price_type
+        );
+      """, (filter,))
     elif filter_type == "month":
-      db_cur.execute("SELECT price.price_type FROM price LEFT JOIN reservation ON price.id = reservation.price_id WHERE ( reservation.price_id is null OR to_char(reservation.initial_time, 'YYYY-MM') != %s ) AND price.is_active is TRUE ", (filter,))
+      db_cur.execute("""
+        SELECT * FROM price
+        WHERE price.price_type NOT IN (
+          SELECT price.price_type FROM price
+          RIGHT JOIN reservation ON reservation.price_id = price.id
+          WHERE to_char(reservation.initial_time, 'YYYY-MM') = %s
+          GROUP BY price.price_type
+        );
+      """, (filter,))
     elif filter_type == "year":
-      db_cur.execute("SELECT price.price_type FROM price LEFT JOIN reservation ON price.id = reservation.price_id WHERE ( reservation.price_id is null OR to_char(reservation.initial_time, 'YYYY') != %s ) AND price.is_active is TRUE ", (filter,))
+      db_cur.execute("""
+        SELECT * FROM price
+        WHERE price.price_type NOT IN (
+          SELECT price.price_type FROM price
+          RIGHT JOIN reservation ON reservation.price_id = price.id
+          WHERE to_char(reservation.initial_time, 'YYYY') = %s
+          GROUP BY price.price_type
+        );
+      """, (filter,))
     prices = db_cur.fetchall()
 
     formated_fields = []
@@ -1023,10 +1072,29 @@ def get_unused_time(filter_type, filter):
     db_cur.close()
     print(e)
     return jsonify({"error": str(e)}), 500
-  
+
+@api.route("/statistics/waitlist/more-requests", methods=["GET"])
+@jwt_required()
+@admin_required
+def get_waitlist_more_requests():
+  db_cur = conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
+
+  try:
+    db_cur.execute("SELECT COUNT(waitlist.interested_time) AS counter, to_char(waitlist.interested_time, 'YYYY-MM-DD HH24:MI:SS') AS datetime FROM waitlist INNER JOIN client ON waitlist.client_id = client.id GROUP BY waitlist.interested_time ORDER BY counter DESC")
+    waitlists = db_cur.fetchall()
+
+    formated_fields = []
+    for waitlist in waitlists:
+      formated_fields.append({"counter": waitlist['counter'], "datetime": waitlist['datetime']})
+    db_cur.close()
+    return jsonify(formated_fields), 200
+  except Exception as e:
+    conn.rollback()
+    db_cur.close()
+    print(e)
+    return jsonify({"error": str(e)}), 500
 
 
-# db_cur.execute("SELECT to_char(reservation.initial_time, 'HH24:MI') as time FROM reservation WHERE ( reservation.fields_id is null OR to_char(reservation.initial_time, 'YYYY-MM-DD') != %s ) GROUP BY to_char(reservation.initial_time, 'HH24:MI');", (filter,))
 
 # waitlist
 @api.route("/waitlist/create", methods=["POST"])
