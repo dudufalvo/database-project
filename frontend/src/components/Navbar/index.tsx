@@ -37,8 +37,10 @@ export const Navbar = () => {
           {user?.role.includes('admin') && <a href='/messages'>Messages</a>}
           {user?.role.includes('admin') && <a href='/fields'>Fields</a>}
           {user?.role.includes('admin') && <a href='/prices'>Prices</a>}
+          {user?.role.includes('admin') && <a href='/admin-reservations'>Change Reservations</a>}
           {user?.role.includes('admin') && <a href='/statistics'>Statistics</a>}
           {user?.role.includes('admin') && <a href='/admin-panel'>Admin</a>}
+          
           <div className={styles.dropdown}>
             <a className={styles.dropdownText} href='/account?tab=settings'>
               <img src='https://upload.wikimedia.org/wikipedia/commons/thumb/7/72/Avatar_icon_green.svg/2048px-Avatar_icon_green.svg.png' alt="picture" className={styles.profilePicture} />

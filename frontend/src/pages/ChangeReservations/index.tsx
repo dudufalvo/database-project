@@ -1,4 +1,4 @@
-import styles from './home.module.scss'
+import styles from './change.module.scss'
 import axios from 'axios'
 import toast from 'utils/toast'
 import { styled } from '@mui/material/styles';
@@ -10,6 +10,11 @@ import TableHead from '@mui/material/TableHead';
 import TableRow from '@mui/material/TableRow';
 import Paper from '@mui/material/Paper';
 import { useEffect, useState } from 'react'
+import { useForm, FormProvider } from 'react-hook-form'
+import { yupResolver } from '@hookform/resolvers/yup'
+import * as yup from 'yup'
+import InputText from 'components/Form/InputText'
+import Button from 'components/Button'
 
 const StyledTableCell = styled(TableCell)(({ theme }) => ({
   [`&.${tableCellClasses.head}`]: {
@@ -33,6 +38,7 @@ const StyledTableRow = styled(TableRow)(({ theme }) => ({
 
 type TableMessageType = {
   reservation_id: number;
+  client: string;
   date: string;
   initial_time: string;
   end_time: string;
@@ -45,6 +51,18 @@ type TableCheckboxType = {
   reservation_id: number;
   cancelled: boolean;
 }
+
+type FieldType = {
+  id: number;
+  date: string;
+  time: string;
+}
+
+const validationSchema = yup.object().shape({
+  id: yup.number().required('ID is required'),
+  date: yup.string().required('Date is required').matches(/^\d{4}-\d{2}-\d{2}$/, 'Date must be in the format YYYY-MM-DD'),
+  time: yup.string().required('Time name is required').matches(/^\d{2}:\d{2}$/, 'Time must be in the format HH:MM')
+})
 
 const TableCheckbox = ({ reservation_id, cancelled }: TableCheckboxType) => {
   const handleChange = () => {
@@ -67,11 +85,15 @@ const TableCheckbox = ({ reservation_id, cancelled }: TableCheckboxType) => {
   )
 }
 
-const Home = () => {
+const ChangeReservations = () => {
   const [futureReservations, setFutureReservations] = useState<TableMessageType[]>([]);
 
+  const methods = useForm<FieldType>({
+    resolver: yupResolver(validationSchema)
+  })
+
   useEffect(() => {
-    axios.get(`${import.meta.env.VITE_API_BASE_URL}/reservations/future`, { headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` } })
+    axios.get(`${import.meta.env.VITE_API_BASE_URL}/reservations/future/all`, { headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` } })
       .then((response) => {
         console.log(response.data)
         setFutureReservations(response.data);
@@ -82,16 +104,43 @@ const Home = () => {
   }
   , [])
 
+  const handleUpdateReservation = (dataPost: FieldType) => {
+    const data = {
+      date: dataPost.date,
+      time: dataPost.time
+    }
+
+    axios.put(`${import.meta.env.VITE_API_BASE_URL}/reservations/${dataPost.id}/update`, { data }, { headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` } })
+      .then(() => {
+        toast.success('Reservation updated successfully');
+      })
+      .catch((response) => {
+        toast.error(response.response.data.error);
+      })
+  }
+
   return (
     <div className={styles.main}>
       <div className={styles.table}>
-        <span>Home</span>
+        <span>Change Reservations</span>
+
+        <div className={styles.forms}>
+          <FormProvider {...methods}>
+            <form className={styles.reviewModal}>
+              <InputText type='number' label='Reservation ID' name='id' id='id' placeholder="Enter the reservation id" isRequired={true} />
+              <InputText label='Date' name='date' id='date' placeholder="Enter the date" isRequired={true} />
+              <InputText label='Time' name='time' id='time' placeholder="Enter the time" isRequired={true} />
+              <Button type='submit' variant='filled' fullWidth handle={methods.handleSubmit(handleUpdateReservation)}>Update Reservation</Button>
+            </form>
+          </FormProvider>
+        </div>
 
         <TableContainer component={Paper}>
           <Table sx={{ minWidth: 700 }} aria-label="customized table">
             <TableHead>
               <TableRow>
                 <StyledTableCell>Reservation ID</StyledTableCell>
+                <StyledTableCell align="right">Client</StyledTableCell>
                 <StyledTableCell align="right">Field</StyledTableCell>
                 <StyledTableCell align="right">Date</StyledTableCell>
                 <StyledTableCell align="right">Initial Time</StyledTableCell>
@@ -106,6 +155,7 @@ const Home = () => {
                   <StyledTableCell component="th" scope="row">
                     {row.reservation_id}
                   </StyledTableCell>
+                  <StyledTableCell align="right">{row.client}</StyledTableCell>
                   <StyledTableCell align="right">{row.field}</StyledTableCell>
                   <StyledTableCell align="right">{row.date}</StyledTableCell>
                   <StyledTableCell align="right">{row.initial_time}</StyledTableCell>
@@ -122,4 +172,4 @@ const Home = () => {
   )
 }
 
-export default Home
+export default ChangeReservations

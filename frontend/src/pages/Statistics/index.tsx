@@ -49,6 +49,15 @@ type WaitlistType = {
   datetime: string,
 }
 
+type ReservationAuditType = {
+  id: number,
+  field: string,
+  old_value: string,
+  new_value: string,
+  change_date: string,
+  reservation_id: boolean
+}
+
 const Statistics = () => {
   const [reservedField, setReservedField] = useState<TableType[]>([])
   const [reservedTime, setReservedTime] = useState<TableType[]>([])
@@ -58,6 +67,7 @@ const Statistics = () => {
   const [unusedFields, setUnusedFields] = useState<TableSimpleType[]>([]);
   const [unusedTimes, setUnusedTimes] = useState<TableSimpleType[]>([]);
   const [waitlist, setWaitlist] = useState<WaitlistType[]>([])
+  const [reservationAudit, setReservationAudit] = useState<ReservationAuditType[]>([])
 
   const handleSelectedOption = (value: SingleValue<DropdownOptionType> | MultiValue<DropdownOptionType>) => {
     if (!value) return
@@ -143,6 +153,14 @@ const Statistics = () => {
     })
     .catch(() => {
       toast.error('Error fetching reserved field statistics')
+    })
+
+    axios.get(`${import.meta.env.VITE_API_BASE_URL}/statistics/reservations-audit/${selectedFilterType}/${selectedFilter}`, { headers: { Authorization: `Bearer ${localStorage.getItem('token')}` } })
+    .then((response) => {
+      setReservationAudit(response.data)
+    })
+    .catch(() => {
+      toast.error('Error fetching audit field statistics')
     })
   }, [selectedFilter])
 
@@ -266,6 +284,40 @@ const Statistics = () => {
                           {unusedTimes.map((row) => (
                             <StyledTableRow key={row.label}>
                               <StyledTableCell align="left">{row.label}</StyledTableCell>
+                            </StyledTableRow>
+                          ))}
+                        </TableBody>
+                      </Table>
+                    </TableContainer>
+          }
+        </div>
+
+        <div>
+          <span>Reservations Audit</span>
+          { reservationAudit.length >= 0 &&
+                      <TableContainer component={Paper}>
+                      <Table sx={{ minWidth: 700 }} aria-label="customized table">
+                        <TableHead>
+                          <TableRow>
+                            <StyledTableCell>Reservation Audit ID</StyledTableCell>
+                            <StyledTableCell align="right">Field</StyledTableCell>
+                            <StyledTableCell align="right">Old Value</StyledTableCell>
+                            <StyledTableCell align="right">New Value</StyledTableCell>
+                            <StyledTableCell align="right">Change Date</StyledTableCell>
+                            <StyledTableCell align="right">Reservation ID</StyledTableCell>
+                          </TableRow>
+                        </TableHead>
+                        <TableBody>
+                          {reservationAudit?.map((row) => (
+                            <StyledTableRow key={row.id}>
+                              <StyledTableCell component="th" scope="row">
+                                {row.id}
+                              </StyledTableCell>
+                              <StyledTableCell align="right">{row.field}</StyledTableCell>
+                              <StyledTableCell align="right">{row.old_value}</StyledTableCell>
+                              <StyledTableCell align="right">{row.new_value}</StyledTableCell>
+                              <StyledTableCell align="right">{row.change_date}</StyledTableCell>
+                              <StyledTableCell align="right">{row.reservation_id}</StyledTableCell>
                             </StyledTableRow>
                           ))}
                         </TableBody>
