@@ -789,6 +789,7 @@ def get_reservations():
 @api.route("/reservations/date/<string:reservation_date>", methods=["GET"])
 @jwt_required()
 def get_reservations_by_day(reservation_date):
+  user_id = get_jwt_identity()
   db_cur = conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
   order_time = request.args.get("order_time")
   order_price = request.args.get("order_price")
@@ -816,17 +817,25 @@ def get_reservations_by_day(reservation_date):
 
     query = f"""
         SELECT fi.id AS field_id, fi.name, pr.id AS price_id, pr.price_type, pr.price_value,
-          CASE WHEN subquery.field_name IS NOT NULL THEN true ELSE false END AS reserved
+          CASE WHEN subquery.field_name IS NOT NULL THEN true ELSE false END AS reserved,
+          CASE WHEN wait_query.init_time IS NOT NULL THEN true ELSE false END AS waiting
         FROM price pr 
         CROSS JOIN fields fi
         LEFT JOIN (
-          SELECT DISTINCT fi.name as field_name, pr.id as pr_id, pr.price_value, pr.price_type as pr_type FROM reservation re 
+          SELECT DISTINCT fi.name as field_name, pr.id as pr_id, pr.price_value, pr.price_type as pr_type, re.initial_time AS time_init
+          FROM reservation re 
           INNER JOIN price pr ON pr.id = re.price_id 
           INNER JOIN fields fi ON fi.id = re.fields_id
           WHERE TO_CHAR(initial_time, 'YYYY-MM-DD') LIKE {"'" + reservation_date + "'"}
         ) AS subquery ON fi.name = subquery.field_name AND pr.price_type = subquery.pr_type AND pr.id = subquery.pr_id
+        LEFT JOIN(
+          SELECT DISTINCT re.fields_id AS field_id, re.initial_time AS init_time FROM reservation re 
+          INNER JOIN waitlist ON waitlist.interested_time = re.initial_time 
+          WHERE TO_CHAR(initial_time, 'YYYY-MM-DD') LIKE {"'" + reservation_date + "'"}
+          AND waitlist.client_id = {user_id}
+        ) AS wait_query ON wait_query.init_time = subquery.time_init
         WHERE pr.is_active is true {query_condition} 
-        GROUP BY fi.id, fi.name, pr.price_type, pr.id, pr.price_value, subquery.field_name
+        GROUP BY fi.id, fi.name, pr.price_type, pr.id, pr.price_value, subquery.field_name, wait_query.init_time
         {order_query}; """
     
     db_cur.execute(query=query)
@@ -836,7 +845,7 @@ def get_reservations_by_day(reservation_date):
     
     formated_reservations = []
     for reservation in reservations:
-      formated_reservations.append({"field_id": reservation["field_id"],"field": reservation['name'], "price_id": reservation["price_id"], "price": reservation['price_value'], "time": reservation['price_type'], "reserved": reservation['reserved']})
+      formated_reservations.append({"field_id": reservation["field_id"],"field": reservation['name'], "price_id": reservation["price_id"], "price": reservation['price_value'], "time": reservation['price_type'], "reserved": reservation['reserved'], "waitlist": reservation['waiting']})
     db_cur.close()
     return jsonify(formated_reservations), 200
   except Exception as e:
@@ -1279,6 +1288,10 @@ def create_waitlist():
         formated_fields.append(field['name'])
       db_cur.close()
       return jsonify({"error": "Fields already available: " + ", ".join(formated_fields)}), 400
+  except UniqueViolation as e:
+    conn.rollback()
+    db_cur.close()
+    return jsonify({"error": "Already in waitlist"}), 400
   except Exception as e:
     conn.rollback()
     db_cur.close()
