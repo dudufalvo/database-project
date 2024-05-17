@@ -1,6 +1,7 @@
 import os
 import psycopg2
 import psycopg2.extras
+from psycopg2.errors import UniqueViolation
 from functools import wraps
 from dotenv import load_dotenv
 from flask import Flask, request, jsonify
@@ -750,6 +751,10 @@ def create_reservation():
         conn.commit()
         db_cur.close()
         return jsonify({"message": "Reservation created"}), 201
+  except UniqueViolation as e:
+    conn.rollback()
+    db_cur.close()
+    return jsonify({"error": "Field already reserved"}), 400
   except Exception as e:
     conn.rollback()
     db_cur.close()
@@ -785,21 +790,57 @@ def get_reservations():
 @jwt_required()
 def get_reservations_by_day(reservation_date):
   db_cur = conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
+  order_time = request.args.get("order_time")
+  order_price = request.args.get("order_price")
+  field_condition = request.args.get("field_id")
+  price_condition = request.args.get("price_id")
 
   try:
-    print(reservation_date)
-    db_cur.execute("SELECT * FROM reservation WHERE cancelled = false and TO_CHAR(initial_time, 'YYYY-MM-DD') LIKE %s;", (reservation_date+'%',))
+    order_query = f"ORDER BY pr.price_type {order_time}, pr.price_value {order_price}"
+
+    if field_condition == '0':
+      query_condition = ""
+    else:
+      query_condition = f"AND fi.id = {field_condition}"
+
+    if price_condition == '0':
+      query_condition = query_condition + ""
+    else:
+      query_condition = query_condition + f" AND pr.id = {price_condition}"
+
+    date_obj = datetime.datetime.strptime(reservation_date, "%Y-%m-%d")
+    if date_obj.weekday() < 5:
+      query_condition = query_condition + " AND pr.price_type LIKE 'SEMANA%'"
+    else:
+      query_condition = query_condition + " AND pr.price_type LIKE 'FIM_SEMANA%'"
+
+    query = f"""
+        SELECT fi.id AS field_id, fi.name, pr.id AS price_id, pr.price_type, pr.price_value,
+          CASE WHEN subquery.field_name IS NOT NULL THEN true ELSE false END AS reserved
+        FROM price pr 
+        CROSS JOIN fields fi
+        LEFT JOIN (
+          SELECT DISTINCT fi.name as field_name, pr.id as pr_id, pr.price_value, pr.price_type as pr_type FROM reservation re 
+          INNER JOIN price pr ON pr.id = re.price_id 
+          INNER JOIN fields fi ON fi.id = re.fields_id
+          WHERE TO_CHAR(initial_time, 'YYYY-MM-DD') LIKE {"'" + reservation_date + "'"}
+        ) AS subquery ON fi.name = subquery.field_name AND pr.price_type = subquery.pr_type AND pr.id = subquery.pr_id
+        WHERE pr.is_active is true {query_condition} 
+        GROUP BY fi.id, fi.name, pr.price_type, pr.id, pr.price_value, subquery.field_name
+        {order_query}; """
+    
+    db_cur.execute(query=query)
+
+    
     reservations = db_cur.fetchall()
     
     formated_reservations = []
     for reservation in reservations:
-      db_cur.execute("SELECT * FROM fields WHERE id = %s;", (reservation['fields_id'],))
-      field = db_cur.fetchone()
-
-      formated_reservations.append({"reservation_id": reservation['id'], "field_id": field['id'], "initial_time": reservation['initial_time'].strftime("%HH%M"), "date": reservation['initial_time'].strftime("%Y-%m-%d")})
+      formated_reservations.append({"field_id": reservation["field_id"],"field": reservation['name'], "price_id": reservation["price_id"], "price": reservation['price_value'], "time": reservation['price_type'], "reserved": reservation['reserved']})
     db_cur.close()
     return jsonify(formated_reservations), 200
   except Exception as e:
+    print(e)
     conn.rollback()
     db_cur.close()
     return jsonify({"error": str(e)}), 500

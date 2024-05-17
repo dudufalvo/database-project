@@ -1,0 +1,1 @@
+CREATE UNIQUE INDEX reservation_ocupied ON reservation (fields_id, initial_time);
