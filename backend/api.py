@@ -72,7 +72,7 @@ def register_user():
       db_cur.close()
       return jsonify({"error": "User already exists"}), 400
     else: 
-      db_cur.execute("INSERT INTO client (first_name, last_name, password, email, phone_number, nif, role) VALUES (%s, %s, %s, %s, %s, %s, %s);", (data["first_name"], data["last_name"], generate_password_hash(data["password"],"pbkdf2"), data["email"], data["phone_number"], data["nif"], "superadmin",))
+      db_cur.execute("INSERT INTO client (first_name, last_name, password, email, phone_number, nif, role) VALUES (%s, %s, %s, %s, %s, %s, %s);", (data["first_name"], data["last_name"], generate_password_hash(data["password"],"pbkdf2"), data["email"], data["phone_number"], data["nif"], data["role"],))
       conn.commit()
 
       db_cur.execute("SELECT * FROM client WHERE email = %s;", (data["email"],))

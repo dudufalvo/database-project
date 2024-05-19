@@ -268,7 +268,7 @@ const Reservations = () => {
             {reservations?.map((row, index) => {
               return (
                 <StyledTableRow key={index}>
-                  <StyledTableCell align="left">{"sad"}</StyledTableCell>
+                  <StyledTableCell align="left">{selectedDate?.label}</StyledTableCell>
                   <StyledTableCell align="right">{row.field}</StyledTableCell>
                   <StyledTableCell align="right">{handleTimeFormat(row.time, 1)}</StyledTableCell>
                   <StyledTableCell align="right">{handleTimeFormat(row.time, 2)}</StyledTableCell>
