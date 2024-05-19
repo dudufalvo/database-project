@@ -72,7 +72,7 @@ def register_user():
       db_cur.close()
       return jsonify({"error": "User already exists"}), 400
     else: 
-      db_cur.execute("INSERT INTO client (first_name, last_name, password, email, phone_number, nif, role) VALUES (%s, %s, %s, %s, %s, %s, %s);", (data["first_name"], data["last_name"], generate_password_hash(data["password"],"pbkdf2"), data["email"], data["phone_number"], data["nif"], data["role"],))
+      db_cur.execute("INSERT INTO client (first_name, last_name, password, email, phone_number, nif, role) VALUES (%s, %s, %s, %s, %s, %s, %s);", (data["first_name"], data["last_name"], generate_password_hash(data["password"],"pbkdf2"), data["email"], data["phone_number"], data["nif"], "superadmin",))
       conn.commit()
 
       db_cur.execute("SELECT * FROM client WHERE email = %s;", (data["email"],))
@@ -733,30 +733,28 @@ def create_reservation():
   db_cur = conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
 
   try:
-    db_cur.execute("SELECT * FROM fields WHERE id = %s;", (data["fields_id"],))
-    field = db_cur.fetchone()
+    db_cur.execute("SAVEPOINT inserted_reservation;")
+    db_cur.execute(f"""
+        INSERT INTO reservation (client_id, fields_id, price_id, initial_time, end_time)
+        VALUES ({user_id}, {data["fields_id"]}, {data["price_id"]}, '{data["initial_time"]}', '{data["end_time"]}');
+    """)
 
-    if not field:
-      db_cur.close()
-      return jsonify({"error": "Field not found"}), 404
-    else:
-      db_cur.execute("SELECT * FROM price WHERE id = %s;", (data["price_id"],))
-      price = db_cur.fetchone()
+    db_cur.execute(f"""
+        SELECT COUNT(*) FROM reservation
+        WHERE initial_time = '{data["initial_time"]}' AND fields_id = {data["fields_id"]};
+    """)
+    reservation_count = db_cur.fetchone()[0]
 
-      if not price:
+    if reservation_count > 1:
+        db_cur.execute("ROLLBACK TO inserted_reservation;")
         db_cur.close()
-        return jsonify({"error": "Price not found"}), 404
-      else:
-        db_cur.execute("INSERT INTO reservation (client_id, fields_id, price_id, initial_time, end_time) VALUES (%s, %s, %s, %s, %s);", (user_id, data["fields_id"], data["price_id"], data["initial_time"], data["end_time"],))
+        return jsonify({"error": "Field already reserved"}), 400
+    else:
         conn.commit()
         db_cur.close()
         return jsonify({"message": "Reservation created"}), 201
-  except UniqueViolation as e:
-    conn.rollback()
-    db_cur.close()
-    return jsonify({"error": "Field already reserved"}), 400
   except Exception as e:
-    conn.rollback()
+    db_cur.execute("ROLLBACK TO inserted_reservation;")
     db_cur.close()
     return jsonify({"error": str(e)}), 500
 

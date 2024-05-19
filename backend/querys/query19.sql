@@ -1,1 +1,1 @@
-CREATE UNIQUE INDEX reservation_ocupied ON reservation (fields_id, initial_time);
+CREATE UNIQUE INDEX already_waiting ON waitlist (interested_time);
