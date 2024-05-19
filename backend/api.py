@@ -734,6 +734,9 @@ def create_reservation():
 
   try:
     db_cur.execute("SAVEPOINT inserted_reservation;")
+
+    date_without_time = data["initial_time"].split(" ")[0]
+
     db_cur.execute(f"""
         INSERT INTO reservation (client_id, fields_id, price_id, initial_time, end_time)
         VALUES ({user_id}, {data["fields_id"]}, {data["price_id"]}, '{data["initial_time"]}', '{data["end_time"]}');
@@ -741,7 +744,19 @@ def create_reservation():
 
     db_cur.execute(f"""
         SELECT COUNT(*) FROM reservation
-        WHERE initial_time = '{data["initial_time"]}' AND fields_id = {data["fields_id"]};
+        WHERE TO_CHAR(initial_time, 'YYYY-MM-DD') = '{date_without_time}' AND client_id = {user_id} AND cancelled = false;
+    """)
+    reservation_count = db_cur.fetchone()[0]
+
+    if reservation_count > 1:
+        db_cur.execute("ROLLBACK TO inserted_reservation;")
+        db_cur.close()
+        return jsonify({"error": "You already make a reservation for today!"}), 400
+
+
+    db_cur.execute(f"""
+        SELECT COUNT(*) FROM reservation
+        WHERE initial_time = '{data["initial_time"]}' AND fields_id = {data["fields_id"]} AND cancelled = false;
     """)
     reservation_count = db_cur.fetchone()[0]
 
@@ -754,6 +769,7 @@ def create_reservation():
         db_cur.close()
         return jsonify({"message": "Reservation created"}), 201
   except Exception as e:
+    print(e)
     db_cur.execute("ROLLBACK TO inserted_reservation;")
     db_cur.close()
     return jsonify({"error": str(e)}), 500
@@ -824,7 +840,7 @@ def get_reservations_by_day(reservation_date):
           FROM reservation re 
           INNER JOIN price pr ON pr.id = re.price_id 
           INNER JOIN fields fi ON fi.id = re.fields_id
-          WHERE TO_CHAR(initial_time, 'YYYY-MM-DD') LIKE {"'" + reservation_date + "'"}
+          WHERE TO_CHAR(initial_time, 'YYYY-MM-DD') LIKE {"'" + reservation_date + "'"} AND re.cancelled is false
         ) AS subquery ON fi.name = subquery.field_name AND pr.price_type = subquery.pr_type AND pr.id = subquery.pr_id
         LEFT JOIN(
           SELECT DISTINCT re.fields_id AS field_id, re.initial_time AS init_time FROM reservation re 
